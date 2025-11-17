@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     
     # Security Configuration
     safe_redirect_base_url: str = Field(
-        default="https://cyberguard.academy/safe-redirect",
+        default="https://cyberguard.academy/safe-redirect", # TODO: find a domain
         description="Base URL for safe phishing link redirects"
     )
     anonymous_user_id_salt: str = Field(
