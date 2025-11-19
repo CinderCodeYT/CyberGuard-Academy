@@ -79,56 +79,109 @@ class BaseAgent(ABC):
             correlation_id=original_message.correlation_id
         )
 
+    def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get current status of an active session.
+        
+        Common utility that all agents managing sessions can use.
+        
+        Args:
+            session_id: ID of session to check
+            
+        Returns:
+            Session status information or None if not found
+        """
+        if session_id not in self.active_sessions:
+            return None
+        
+        session = self.active_sessions[session_id]
+        
+        return {
+            "session_id": session_id,
+            "user_id": session.user_id,
+            "scenario_type": session.scenario_type.value if hasattr(session.scenario_type, 'value') else str(session.scenario_type),
+            "current_state": session.current_state,
+            "conversation_turns": len(session.conversation_history),
+            "created_at": session.created_at.isoformat(),
+            "agent_name": self.agent_name
+        }
+
+    def list_active_sessions(self) -> List[Dict[str, Any]]:
+        """
+        List all currently active sessions for this agent.
+        
+        Returns:
+            List of session status dictionaries
+        """
+        return [
+            self.get_session_status(session_id) 
+            for session_id in self.active_sessions.keys()
+            if self.get_session_status(session_id) is not None
+        ]
+
 
 class OrchestratorAgent(BaseAgent):
     """
     Base class for orchestrator agents (Game Master).
     
-    Handles scenario flow, agent coordination, and narrative management.
+    Provides common A2A coordination patterns and session management.
+    Specific orchestration logic should be implemented in concrete classes.
     """
     
     def __init__(self, agent_name: str = "game_master"):
         super().__init__(agent_name, "orchestrator")
+        self.active_coordinations: Dict[str, Dict[str, Any]] = {}
     
-    @abstractmethod
-    async def start_scenario(
-        self, 
-        user_id: str, 
-        scenario_type: str, 
-        context: ScenarioContext
-    ) -> CyberGuardSession:
+    async def send_coordination_message(
+        self,
+        target_agent: str,
+        message_type: str, 
+        payload: Dict[str, Any],
+        session_id: str = "",
+        correlation_id: Optional[str] = None
+    ) -> AgentMessage:
         """
-        Start a new training scenario.
+        Send A2A coordination message to another agent.
+        
+        Common pattern for agent-to-agent communication that all
+        orchestrators can use.
         
         Args:
-            user_id: Anonymized user identifier
-            scenario_type: Type of threat to simulate
-            context: User context and preferences
+            target_agent: Name of target agent
+            message_type: Type of coordination message
+            payload: Message content
+            session_id: Associated session ID
+            correlation_id: Correlation ID for tracking
             
         Returns:
-            New session object
+            Response message from target agent
         """
-        pass
-    
-    @abstractmethod
-    async def coordinate_with_agent(
-        self, 
-        target_agent: str, 
-        action: str, 
-        context: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Send coordination message to specialized agent.
+        import uuid
+        from datetime import datetime
         
-        Args:
-            target_agent: Name of agent to coordinate with
-            action: Action to request from agent
-            context: Context data for the action
-            
-        Returns:
-            Response from target agent
-        """
-        pass
+        if not correlation_id:
+            correlation_id = str(uuid.uuid4())
+        
+        # Create and track coordination
+        message = AgentMessage(
+            sender_agent=self.agent_name,
+            recipient_agent=target_agent,
+            message_type=message_type,
+            payload=payload,
+            session_id=session_id,
+            correlation_id=correlation_id
+        )
+        
+        self.active_coordinations[correlation_id] = {
+            "target_agent": target_agent,
+            "message_type": message_type,
+            "started_at": datetime.utcnow(),
+            "status": "pending"
+        }
+        
+        # In a real implementation, this would use an agent communication framework
+        # For now, return the message that would be sent
+        return message
 
 
 class ThreatActorAgent(BaseAgent):

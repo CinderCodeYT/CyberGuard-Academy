@@ -7,7 +7,7 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 keywords = ["cybersecurity", "training", "ai", "agents", "security-awareness"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,10 +28,11 @@ dependencies = [
     "google-cloud-aiplatform>=1.38.0",
     "google-cloud-logging>=3.8.0",
     "google-cloud-trace>=1.13.0",
-    "google-cloud-secretmanager>=2.18.0",
+    # "google-cloud-secretmanager>=2.18.0",
     "structlog>=23.2.0",
     "httpx>=0.25.0",
     "python-multipart>=0.0.6",
+    "pydantic-settings>=2.12.0",
 ]
 
 [dependency-groups]
