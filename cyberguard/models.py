@@ -5,7 +5,7 @@ This module defines the essential data structures used throughout the system
 for session management, agent communication, and evaluation tracking.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field
@@ -119,22 +119,18 @@ class CyberGuardSession(BaseModel):
     current_difficulty: DifficultyLevel = Field(default=DifficultyLevel.INTERMEDIATE, description="Adaptive difficulty level")
     
     # Metadata
-    created_at: datetime = Field(default_factory=datetime.datetime.datetime.now(datetime.UTC), description="Session creation timestamp")
-    updated_at: datetime = Field(default_factory=datetime.datetime.datetime.now(datetime.UTC), description="Last update timestamp")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Session creation timestamp")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
 
     def add_message(self, role: str, content: str) -> None:
-        """Add a new message to conversation history."""
-        self.conversation_history.append({
-            "role": role,
-            "content": content,
-            "timestamp": str(time.time())
-        })
-        self.updated_at = datetime.datetime.datetime.now(datetime.UTC)()
+        """Add a conversation message and update timestamp."""
+        self.conversation_history.append({"role": role, "content": content})
+        self.updated_at = datetime.now(timezone.utc)
 
     def record_decision(self, decision: DecisionPoint) -> None:
         """Record a user decision point for evaluation."""
         self.decision_points.append(decision)
-        self.updated_at = datetime.datetime.datetime.now(datetime.UTC)()
+        self.updated_at = datetime.now(timezone.utc)
 
     def calculate_session_duration(self) -> float:
         """Calculate total session duration in seconds."""
@@ -172,13 +168,13 @@ class UserProfile(BaseModel):
     completion_rate: float = Field(default=0.0, description="Percentage of scenarios completed vs abandoned")
     
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.datetime.datetime.now(datetime.UTC), description="Profile creation date")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Profile creation date")
     last_session_at: Optional[datetime] = Field(None, description="Most recent session timestamp")
     
     def update_from_session(self, session: CyberGuardSession) -> None:
         """Update profile based on completed session results."""
         self.total_sessions += 1
-        self.last_session_at = datetime.datetime.datetime.now(datetime.UTC)()
+        self.last_session_at = datetime.now(timezone.utc)
         # Additional update logic would be implemented here
         
 
@@ -210,5 +206,5 @@ class EvaluationResult(BaseModel):
     focus_areas: List[str] = Field(default_factory=list, description="Vulnerability patterns to emphasize")
     
     # Metadata
-    evaluated_at: datetime = Field(default_factory=datetime.datetime.datetime.now(datetime.UTC), description="When evaluation was performed")
+    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When evaluation was performed")
     evaluator_version: str = Field(default="1.0", description="Version of evaluation algorithm used")
