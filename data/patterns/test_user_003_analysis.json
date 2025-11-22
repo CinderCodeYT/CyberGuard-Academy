@@ -1,0 +1,73 @@
+{
+  "user_id": "test_user_003",
+  "analysis_timestamp": "2025-11-22T10:50:17.873116",
+  "vulnerability_patterns": {
+    "weak_threat_types": [
+      {
+        "threat_type": "authority_phishing",
+        "success_rate": 0.0,
+        "attempts": 2,
+        "successful": 0
+      }
+    ],
+    "strong_threat_types": [
+      {
+        "threat_type": "urgency_phishing",
+        "success_rate": 1.0,
+        "attempts": 2,
+        "successful": 2
+      }
+    ],
+    "social_eng_vulnerabilities": [
+      {
+        "pattern": "authority",
+        "success_rate": 0.0,
+        "attempts": 2,
+        "vulnerability_level": "high"
+      }
+    ],
+    "recent_patterns": [
+      {
+        "type": "recurring_vulnerability",
+        "threat_type": "authority_phishing",
+        "frequency": 2,
+        "severity": "moderate"
+      }
+    ]
+  },
+  "behavioral_patterns": {
+    "response_patterns": {
+      "average_response_time": 20.5,
+      "hasty_decision_rate": 0.16666666666666666,
+      "careful_decision_rate": 0.0
+    },
+    "confidence_patterns": {
+      "average_confidence": 0.7166666666666667,
+      "overconfidence_rate": 0.0
+    },
+    "risk_tolerance": {
+      "risky_choice_rate": 0.0,
+      "safe_choice_rate": 0.0
+    }
+  },
+  "learning_trends": {
+    "trend": "declining",
+    "improvement_rate": -0.19999999999999996,
+    "early_success_rate": 0.6,
+    "recent_success_rate": 0.4,
+    "consistency": 0.96
+  },
+  "performance_patterns": {
+    "overall_success_rate": 0.5,
+    "difficulty_performance": {
+      "3": 0.5
+    },
+    "performance_consistency": 0.33333333333333337,
+    "learning_efficiency": 0.5
+  },
+  "recommendations": [
+    "Focus on authority_phishing recognition training",
+    "Review basic security awareness principles"
+  ],
+  "risk_assessment": "high"
+}

@@ -1,0 +1,429 @@
+{
+  "user_id": "test_user_004",
+  "created_at": "2025-11-22T10:38:05.662814",
+  "last_updated": "2025-11-22T10:50:17.958146",
+  "current_level": 4,
+  "total_points": 365,
+  "scenarios_completed": 56,
+  "threats_identified": 49,
+  "threats_missed": 7,
+  "false_positives": 0,
+  "overall_success_rate": 0.875,
+  "current_streak": 4,
+  "best_streak": 7,
+  "achievements": [
+    {
+      "achievement_id": "first_threat_identified",
+      "name": "First Success",
+      "description": "Successfully identified your first phishing threat",
+      "points": 10,
+      "earned_at": "2025-11-22T10:38:05.662862"
+    },
+    {
+      "achievement_id": "streak_3",
+      "name": "Getting Good",
+      "description": "Correctly identified 3 threats in a row",
+      "points": 25,
+      "earned_at": "2025-11-22T10:38:05.686415"
+    },
+    {
+      "achievement_id": "streak_5",
+      "name": "On Fire",
+      "description": "Correctly identified 5 threats in a row",
+      "points": 50,
+      "earned_at": "2025-11-22T10:42:34.918756"
+    },
+    {
+      "achievement_id": "phishing_master",
+      "name": "Phishing Master",
+      "description": "Achieved 90% success rate on phishing scenarios",
+      "points": 150,
+      "earned_at": "2025-11-22T10:42:34.918987"
+    },
+    {
+      "achievement_id": "milestone_10",
+      "name": "Getting Started",
+      "description": "Completed 10 training scenarios",
+      "points": 30,
+      "earned_at": "2025-11-22T10:42:34.919218"
+    },
+    {
+      "achievement_id": "milestone_50",
+      "name": "Experienced",
+      "description": "Completed 50 training scenarios",
+      "points": 100,
+      "earned_at": "2025-11-22T10:50:17.900234"
+    }
+  ],
+  "milestones": {
+    "scenarios": [],
+    "success_rates": [],
+    "streaks": []
+  },
+  "progress_percentages": {
+    "basic_awareness": 100.0,
+    "threat_identification": 100.0,
+    "advanced_detection": 100.0,
+    "security_mastery": 92.10526315789474
+  },
+  "weekly_stats": {
+    "scenarios_this_week": 56,
+    "success_rate_this_week": 0.875,
+    "week_start": "2025-11-22T10:38:05.662832",
+    "threats_identified_this_week": 49,
+    "threats_missed_this_week": 7
+  },
+  "session_history": [
+    {
+      "timestamp": "2025-11-22T10:38:05.710738",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:38:05.718087",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.911251",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.918742",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.928763",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.936634",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.945449",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.953892",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.964411",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:42:34.973484",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.200846",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.209097",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.218622",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.227014",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.235175",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.244108",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.252810",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.261096",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.703127",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.711390",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.719979",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.728722",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.736893",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.745243",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.753687",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:45:36.762692",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.077839",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.086236",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.094389",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.102849",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.111092",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.119868",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.129099",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:46:56.137865",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.884833",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.893147",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.902907",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.911987",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.920780",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.929863",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.938863",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:49:51.947403",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.890547",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.900209",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 25,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.910156",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 20,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.919153",
+      "scenario_type": "authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.929229",
+      "scenario_type": "urgency",
+      "success": true,
+      "response_time": 18,
+      "difficulty": 3
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.938708",
+      "scenario_type": "curiosity",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.948470",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 22,
+      "difficulty": 4
+    },
+    {
+      "timestamp": "2025-11-22T10:50:17.958093",
+      "scenario_type": "phishing",
+      "success": true,
+      "response_time": 28,
+      "difficulty": 4
+    }
+  ],
+  "level_changed": true
+}

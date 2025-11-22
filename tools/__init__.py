@@ -11,6 +11,12 @@ from .email_generator import EmailGenerator
 from .link_generator import LinkGenerator
 from .header_spoofing import HeaderSpoofing
 
+# Memory Manager tools
+from .session_manager import SessionManager
+from .user_profiler import UserProfiler
+from .pattern_analyzer import PatternAnalyzer
+from .progress_tracker import ProgressTracker
+
 __all__ = [
     "ScenarioSelector",
     "AgentCoordinator", 
@@ -19,5 +25,9 @@ __all__ = [
     "DebriefGenerator",
     "EmailGenerator",
     "LinkGenerator",
-    "HeaderSpoofing"
+    "HeaderSpoofing",
+    "SessionManager",
+    "UserProfiler", 
+    "PatternAnalyzer",
+    "ProgressTracker"
 ]

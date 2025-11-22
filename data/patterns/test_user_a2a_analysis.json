@@ -1,0 +1,56 @@
+{
+  "user_id": "test_user_a2a",
+  "analysis_timestamp": "2025-11-22T10:50:17.984511",
+  "vulnerability_patterns": {
+    "weak_threat_types": [
+      {
+        "threat_type": "authority",
+        "success_rate": 0.0,
+        "attempts": 1,
+        "successful": 0
+      }
+    ],
+    "strong_threat_types": [
+      {
+        "threat_type": "phishing",
+        "success_rate": 1.0,
+        "attempts": 1,
+        "successful": 1
+      }
+    ],
+    "social_eng_vulnerabilities": [],
+    "recent_patterns": []
+  },
+  "behavioral_patterns": {
+    "response_patterns": {
+      "average_response_time": 0,
+      "hasty_decision_rate": 1.0,
+      "careful_decision_rate": 0.0
+    },
+    "confidence_patterns": {
+      "average_confidence": 0.5,
+      "overconfidence_rate": 0.0
+    },
+    "risk_tolerance": {
+      "risky_choice_rate": 0.0,
+      "safe_choice_rate": 0.0
+    }
+  },
+  "learning_trends": {
+    "trend": "insufficient_data",
+    "improvement_rate": 0.0
+  },
+  "performance_patterns": {
+    "overall_success_rate": 0.5,
+    "difficulty_performance": {
+      "3": 0.5
+    },
+    "performance_consistency": 0.5,
+    "learning_efficiency": 0.5
+  },
+  "recommendations": [
+    "Focus on authority recognition training",
+    "Practice taking more time to analyze suspicious emails"
+  ],
+  "risk_assessment": "high"
+}

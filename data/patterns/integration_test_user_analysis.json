@@ -1,0 +1,61 @@
+{
+  "user_id": "integration_test_user",
+  "analysis_timestamp": "2025-11-22T10:44:11.473346",
+  "vulnerability_patterns": {
+    "weak_threat_types": [
+      {
+        "threat_type": "subtle_authority",
+        "success_rate": 0.0,
+        "attempts": 1,
+        "successful": 0
+      }
+    ],
+    "strong_threat_types": [
+      {
+        "threat_type": "obvious_phishing",
+        "success_rate": 1.0,
+        "attempts": 3,
+        "successful": 3
+      },
+      {
+        "threat_type": "moderate_urgency",
+        "success_rate": 1.0,
+        "attempts": 1,
+        "successful": 1
+      }
+    ],
+    "social_eng_vulnerabilities": [],
+    "recent_patterns": []
+  },
+  "behavioral_patterns": {
+    "response_patterns": {
+      "average_response_time": 33.0,
+      "hasty_decision_rate": 0.0,
+      "careful_decision_rate": 0.0
+    },
+    "confidence_patterns": {
+      "average_confidence": 0.5,
+      "overconfidence_rate": 0.0
+    },
+    "risk_tolerance": {
+      "risky_choice_rate": 0.0,
+      "safe_choice_rate": 0.0
+    }
+  },
+  "learning_trends": {
+    "trend": "insufficient_data",
+    "improvement_rate": 0.0
+  },
+  "performance_patterns": {
+    "overall_success_rate": 0.8,
+    "difficulty_performance": {
+      "3": 0.8
+    },
+    "performance_consistency": 0.5,
+    "learning_efficiency": 0.5
+  },
+  "recommendations": [
+    "Focus on subtle_authority recognition training"
+  ],
+  "risk_assessment": "high"
+}

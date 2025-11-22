@@ -1,0 +1,54 @@
+{
+  "session_id": "cefe63f2-efe9-49d8-9014-cbf2791b9235",
+  "user_id": "integration_test_user",
+  "user_role": "general",
+  "current_difficulty": 1,
+  "start_time": 1763805018.1779153,
+  "end_time": null,
+  "scenario_type": "phishing",
+  "scenario_id": "phishing_cefe63f2",
+  "current_state": "intro",
+  "conversation_history": [],
+  "decision_points": [
+    {
+      "turn": 1,
+      "vulnerability": "obvious_phishing",
+      "user_choice": "report_suspicious",
+      "correct_choice": "report_suspicious",
+      "risk_score_impact": 0.0
+    },
+    {
+      "turn": 2,
+      "vulnerability": "obvious_phishing",
+      "user_choice": "report_suspicious",
+      "correct_choice": "report_suspicious",
+      "risk_score_impact": 0.0
+    },
+    {
+      "turn": 3,
+      "vulnerability": "subtle_authority",
+      "user_choice": "click_link",
+      "correct_choice": "report_suspicious",
+      "risk_score_impact": 0.2
+    },
+    {
+      "turn": 4,
+      "vulnerability": "obvious_phishing",
+      "user_choice": "report_suspicious",
+      "correct_choice": "report_suspicious",
+      "risk_score_impact": 0.0
+    },
+    {
+      "turn": 5,
+      "vulnerability": "moderate_urgency",
+      "user_choice": "report_suspicious",
+      "correct_choice": "report_suspicious",
+      "risk_score_impact": 0.0
+    }
+  ],
+  "threat_actor_active": null,
+  "hints_used": 0,
+  "pause_count": 0,
+  "created_at": "2025-11-22T09:50:18.177919+00:00",
+  "updated_at": "2025-11-22T09:50:18.250764+00:00"
+}

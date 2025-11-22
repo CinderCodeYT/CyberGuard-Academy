@@ -1,0 +1,86 @@
+{
+  "user_id": "integration_test_user",
+  "created_at": "2025-11-22T10:44:11.435639",
+  "last_updated": "2025-11-22T10:44:11.480251",
+  "current_level": 1,
+  "total_points": 10,
+  "scenarios_completed": 5,
+  "threats_identified": 4,
+  "threats_missed": 1,
+  "false_positives": 0,
+  "overall_success_rate": 0.8,
+  "current_streak": 2,
+  "best_streak": 2,
+  "achievements": [
+    {
+      "achievement_id": "first_threat_identified",
+      "name": "First Success",
+      "description": "Successfully identified your first phishing threat",
+      "points": 10,
+      "earned_at": "2025-11-22T10:44:11.435674"
+    }
+  ],
+  "milestones": {
+    "scenarios": [],
+    "success_rates": [],
+    "streaks": []
+  },
+  "progress_percentages": {
+    "basic_awareness": 50.0,
+    "threat_identification": 0.0,
+    "advanced_detection": 0.0,
+    "security_mastery": 0.0
+  },
+  "weekly_stats": {
+    "scenarios_this_week": 5,
+    "success_rate_this_week": 0.8,
+    "week_start": "2025-11-22T10:44:11.435651",
+    "threats_identified_this_week": 4,
+    "threats_missed_this_week": 1
+  },
+  "session_history": [
+    {
+      "timestamp": "2025-11-22T10:44:11.435665",
+      "scenario_type": "obvious_phishing",
+      "success": true,
+      "response_time": 45,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.442721",
+      "scenario_type": "obvious_phishing",
+      "success": true,
+      "response_time": 40,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.449791",
+      "scenario_type": "subtle_authority",
+      "success": false,
+      "response_time": 15,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.456421",
+      "scenario_type": "obvious_phishing",
+      "success": true,
+      "response_time": 35,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.464682",
+      "scenario_type": "moderate_urgency",
+      "success": true,
+      "response_time": 30,
+      "difficulty": 2
+    },
+    {
+      "timestamp": "2025-11-22T10:44:11.480232",
+      "scenario_type": "unknown",
+      "success": false,
+      "response_time": 0,
+      "difficulty": 1
+    }
+  ],
+  "level_changed": false
+}
