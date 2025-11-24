@@ -26,12 +26,15 @@
       "vulnerability": "phishing_email_recognition",
       "user_choice": "report_as_suspicious",
       "correct_choice": "report_as_suspicious",
-      "risk_score_impact": 0.0
+      "risk_score_impact": 0.0,
+      "timestamp": 1764023154.5268462,
+      "confidence_level": null
     }
   ],
   "threat_actor_active": "phishing_agent",
   "hints_used": 0,
   "pause_count": 0,
   "created_at": "2025-11-22T09:50:17.809098+00:00",
-  "updated_at": "2025-11-22T09:50:17.816919+00:00"
+  "updated_at": "2025-11-22T09:50:17.816919+00:00",
+  "is_active": false
 }

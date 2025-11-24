@@ -113,6 +113,7 @@ class CyberGuardSession(BaseModel):
     end_time: Optional[float] = Field(None, description="When scenario completed")
     hints_used: int = Field(default=0, description="Number of hints provided to user")
     pause_count: int = Field(default=0, description="Times user paused/resumed scenario")
+    is_active: bool = Field(default=True, description="Whether session is currently active")
     
     # User context
     user_role: UserRole = Field(..., description="User's job function")

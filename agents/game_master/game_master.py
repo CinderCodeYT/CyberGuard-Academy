@@ -29,6 +29,7 @@ from cyberguard.models import (
     UserRole
 )
 from cyberguard.config import settings
+from cyberguard.gemini_client import GeminiClient
 from tools.scenario_selector import ScenarioSelector
 from tools.agent_coordinator import AgentCoordinator
 from tools.narrative_manager import NarrativeManager

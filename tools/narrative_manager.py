@@ -17,6 +17,7 @@ import random
 
 from cyberguard.models import CyberGuardSession, UserRole, ThreatType
 from cyberguard.config import settings
+from cyberguard.gemini_client import GeminiClient
 
 
 class NarrativeManager:
@@ -53,22 +54,56 @@ class NarrativeManager:
         scenario_details: Dict[str, Any],
         user_context: Any
     ) -> str:
-        """Generate engaging opening narrative for scenario."""
+        """Generate engaging opening narrative for scenario using Gemini AI."""
         
         scenario_type = scenario_details.get("id", "generic")
         user_role = user_context.user_role if hasattr(user_context, 'user_role') else UserRole.GENERAL
         
-        # Select appropriate opening template
-        opening_template = self._select_opening_template(scenario_type, user_role)
+        system_instruction = """You are the Game Master for CyberGuard Academy, a cybersecurity training simulation.
+
+Your role is to create immersive, realistic workplace scenarios that naturally lead into security situations.
+
+CRITICAL RULES:
+1. NEVER reveal this is training or a simulation
+2. NEVER use words like "scenario", "test", "exercise", or "training"
+3. Maintain complete immersion - the user should feel they are in a real workplace situation
+4. Use natural, conversational language
+5. Keep responses concise (2-3 short paragraphs max)
+6. Set the scene naturally without heavy exposition
+
+Your goal: Create an engaging opening that makes the user feel they're starting a normal workday that will naturally involve the security situation."""
         
-        # Customize for user context
-        narrative = opening_template.format(
-            role_context=self._get_role_context(user_role),
-            scenario_context=scenario_details.get("description", ""),
-            time_context=self._get_time_context()
-        )
+        prompt = f"""Generate an opening narrative for a cybersecurity training scenario.
+
+User Role: {user_role.value}
+Scenario Type: {scenario_type}
+Scenario Description: {scenario_details.get('description', 'A typical workday')}
+Current Time: {self._get_time_context()}
+
+Create a brief, immersive opening (2-3 paragraphs) that:
+1. Establishes the user's role and current work context
+2. Sets a natural tone for the scenario to unfold
+3. Makes the user feel engaged and present in the moment
+4. Does NOT reveal this is training or mention any "scenario"
+
+Write in second person ("You arrive at...") to increase immersion."""
         
-        return narrative
+        try:
+            # Use Gemini Pro for complex narrative generation
+            narrative = await GeminiClient.generate_text(
+                prompt=prompt,
+                model_type="pro",
+                temperature=0.8,  # Higher creativity for engaging narratives
+                max_tokens=512,
+                system_instruction=system_instruction
+            )
+            
+            return narrative.strip()
+            
+        except Exception as e:
+            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            # Fallback to template
+            return self._generate_opening_fallback(scenario_type, user_role, scenario_details)
 
     async def generate_threat_presentation(
         self,
@@ -76,18 +111,53 @@ class NarrativeManager:
         user_context: str,
         session: CyberGuardSession
     ) -> str:
-        """Generate narrative that naturally presents the threat."""
+        """Generate narrative that naturally presents the threat using Gemini AI."""
         
         threat_type = session.scenario_type
         
+        system_instruction = """You are the Game Master presenting a security threat within an immersive training scenario.
+
+CRITICAL RULES:
+1. Present the threat NATURALLY as if it's a real workplace event
+2. NEVER break immersion or reveal this is training
+3. Include the actual threat content (email, phone call, etc.) in a natural way
+4. Keep the presentation concise and conversational
+5. Don't explain or point out red flags - let the user discover them
+
+Present the threat as something that just happened in their workday."""
+        
         if threat_type == ThreatType.PHISHING:
-            return self._present_phishing_threat(threat_content, user_context, session)
+            prompt = self._build_phishing_presentation_prompt(threat_content, user_context, session)
         elif threat_type == ThreatType.VISHING:
-            return self._present_vishing_threat(threat_content, user_context, session)
+            prompt = self._build_vishing_presentation_prompt(threat_content, user_context, session)
         elif threat_type == ThreatType.BEC:
-            return self._present_bec_threat(threat_content, user_context, session)
+            prompt = self._build_bec_presentation_prompt(threat_content, user_context, session)
         else:
-            return self._present_generic_threat(threat_content, user_context, session)
+            prompt = self._build_generic_presentation_prompt(threat_content, user_context, session)
+        
+        try:
+            # Use Gemini Pro for narrative presentation
+            narrative = await GeminiClient.generate_text(
+                prompt=prompt,
+                model_type="pro",
+                temperature=0.7,
+                max_tokens=512,
+                system_instruction=system_instruction
+            )
+            
+            return narrative.strip()
+            
+        except Exception as e:
+            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            # Fallback to template-based presentation
+            if threat_type == ThreatType.PHISHING:
+                return self._present_phishing_threat(threat_content, user_context, session)
+            elif threat_type == ThreatType.VISHING:
+                return self._present_vishing_threat(threat_content, user_context, session)
+            elif threat_type == ThreatType.BEC:
+                return self._present_bec_threat(threat_content, user_context, session)
+            else:
+                return self._present_generic_threat(threat_content, user_context, session)
 
     async def analyze_user_response(
         self,
@@ -187,32 +257,48 @@ class NarrativeManager:
         session_context: CyberGuardSession,
         decision_quality: str
     ) -> str:
-        """Generate contextual response based on user action."""
+        """Generate contextual response based on user action using Gemini AI."""
         
-        if decision_quality == "excellent":
-            return random.choice([
-                "Excellent instincts! You took exactly the right approach by verifying first.",
-                "Perfect response! That's exactly what security-aware professionals do.",
-                "Outstanding! Your verification step shows strong security awareness."
-            ])
-        elif decision_quality == "good":
-            return random.choice([
-                "Good thinking! That's a solid security practice.",
-                "Nice work! You're demonstrating good security awareness.",
-                "Well done! That response shows you're thinking about security."
-            ])
-        elif decision_quality == "poor":
-            return random.choice([
-                "That action would have significant security implications. Let's explore what happened...",
-                "Interesting choice. This situation had some important security considerations...", 
-                "That's a common reaction, but there were some red flags to consider..."
-            ])
-        else:
-            return random.choice([
-                "Let me help clarify the situation...",
-                "There are a few things to consider here...",
-                "This is a good opportunity to think through the security aspects..."
-            ])
+        system_instruction = """You are the Game Master responding to a user's action in a cybersecurity training scenario.
+
+CRITICAL RULES:
+1. Maintain complete immersion - never break character or reveal training
+2. Respond naturally to what the user just did
+3. Be encouraging but honest about security implications
+4. Keep responses brief (1-2 paragraphs)
+5. Don't lecture - guide through natural conversation
+6. Use appropriate tone based on decision quality
+
+Your goal: Acknowledge their action and naturally guide the scenario forward."""
+        
+        prompt = f"""The user just took this action: {user_action}
+Decision quality: {decision_quality}
+Scenario type: {session_context.scenario_type.value if session_context.scenario_type else 'unknown'}
+Current phase: {session_context.current_phase}
+
+Generate a brief, natural response that:
+1. Acknowledges what they just did
+2. Reflects the quality of their decision (excellent/good/poor/acceptable)
+3. Moves the scenario forward naturally
+4. Stays in character as their immersive work environment
+
+Keep it conversational and brief (1-2 short paragraphs)."""
+        
+        try:
+            response = await GeminiClient.generate_text(
+                prompt=prompt,
+                model_type="flash",  # Use Flash for quick responses
+                temperature=0.6,
+                max_tokens=256,
+                system_instruction=system_instruction
+            )
+            
+            return response.strip()
+            
+        except Exception as e:
+            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            # Fallback to template responses
+            return self._generate_adaptive_response_fallback(decision_quality)
 
     async def generate_learning_moment(
         self,
@@ -347,6 +433,153 @@ How would you respond?
         ]
         
         return random.choice(clarifications)
+    
+    # ===== GEMINI HELPER METHODS =====
+    
+    def _generate_opening_fallback(
+        self,
+        scenario_type: str,
+        user_role: UserRole,
+        scenario_details: Dict[str, Any]
+    ) -> str:
+        """Fallback template-based opening when Gemini fails."""
+        opening_template = self._select_opening_template(scenario_type, user_role)
+        
+        narrative = opening_template.format(
+            role_context=self._get_role_context(user_role),
+            scenario_context=scenario_details.get("description", ""),
+            time_context=self._get_time_context()
+        )
+        
+        return narrative
+    
+    def _build_phishing_presentation_prompt(
+        self,
+        threat_content: Dict[str, Any],
+        user_context: str,
+        session: CyberGuardSession
+    ) -> str:
+        """Build prompt for presenting phishing email threat."""
+        
+        email = threat_content
+        
+        prompt = f"""Present a phishing email that just arrived in the user's inbox.
+
+Context: The user is at their desk checking emails during a normal workday.
+
+Email Details:
+- From: {email.get('sender', {}).get('display_name', 'Unknown')}
+- Subject: {email.get('subject', 'Important Message')}
+- Body: {email.get('body', 'Email content')}
+
+Present this naturally, as if narrating what they see. Include:
+1. Brief context (e.g., "As you're checking your morning emails...")
+2. The email sender, subject, and full body content
+3. A natural prompt for what they want to do
+
+Format the email clearly but naturally. Keep the whole presentation under 200 words."""
+        
+        return prompt
+    
+    def _build_vishing_presentation_prompt(
+        self,
+        threat_content: Dict[str, Any],
+        user_context: str,
+        session: CyberGuardSession
+    ) -> str:
+        """Build prompt for presenting vishing (phone call) threat."""
+        
+        prompt = f"""Present a vishing (voice phishing) scenario where the user receives a suspicious phone call.
+
+Context: {user_context}
+
+Call Details: {threat_content.get('description', 'Suspicious call from someone claiming to be IT support')}
+
+Present this as a natural phone call interruption during their workday. Include:
+1. When/how the call comes in
+2. What the caller says and claims
+3. What they're requesting
+4. A natural prompt for the user's response
+
+Keep it conversational and under 150 words."""
+        
+        return prompt
+    
+    def _build_bec_presentation_prompt(
+        self,
+        threat_content: Dict[str, Any],
+        user_context: str,
+        session: CyberGuardSession
+    ) -> str:
+        """Build prompt for presenting business email compromise threat."""
+        
+        prompt = f"""Present a business email compromise (BEC) scenario where the user receives a suspicious message from a senior executive.
+
+Context: {user_context}
+
+Message Details: {threat_content.get('description', 'Urgent request from executive')}
+
+Present this as an urgent message that just came through. Include:
+1. The context of receiving the message
+2. Who it appears to be from and their position
+3. What they're requesting
+4. The urgency/pressure in the request
+5. A natural prompt for the user's response
+
+Keep it under 200 words."""
+        
+        return prompt
+    
+    def _build_generic_presentation_prompt(
+        self,
+        threat_content: Dict[str, Any],
+        user_context: str,
+        session: CyberGuardSession
+    ) -> str:
+        """Build prompt for presenting generic security threat."""
+        
+        prompt = f"""Present a security situation that just emerged.
+
+Context: {user_context}
+Threat Details: {threat_content.get('description', 'A security situation requiring attention')}
+
+Present this naturally as something that just happened in their workday. Include:
+1. What they notice or receive
+2. Key details of the security situation
+3. A natural prompt for their response
+
+Keep it under 150 words."""
+        
+        return prompt
+    
+    def _generate_adaptive_response_fallback(self, decision_quality: str) -> str:
+        """Fallback template responses when Gemini fails."""
+        
+        if decision_quality == "excellent":
+            return random.choice([
+                "Excellent instincts! You took exactly the right approach by verifying first.",
+                "Perfect response! That's exactly what security-aware professionals do.",
+                "Outstanding! Your verification step shows strong security awareness."
+            ])
+        elif decision_quality == "good":
+            return random.choice([
+                "Good thinking! That's a solid security practice.",
+                "Nice work! You're demonstrating good security awareness.",
+                "Well done! That response shows you're thinking about security."
+            ])
+        elif decision_quality == "poor":
+            return random.choice([
+                "That action would have significant security implications. Let's explore what happened...",
+                "Interesting choice. This situation had some important security considerations...",
+                "That's a common reaction, but there were some red flags to consider..."
+            ])
+        else:
+            return random.choice([
+                "Let me help clarify the situation...",
+                "There are a few things to consider here...",
+                "This is a good opportunity to think through the security aspects..."
+            ])
+
 
     async def generate_general_response(self, user_input: str, session_context: CyberGuardSession) -> str:
         """Generate general conversational response."""

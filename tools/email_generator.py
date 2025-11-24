@@ -12,6 +12,7 @@ Key principle: Emails should be realistic enough to challenge users
 while maintaining clear educational value and safety constraints.
 """
 
+import json
 from typing import Dict, Any, List
 
 from cyberguard.models import (
@@ -20,6 +21,7 @@ from cyberguard.models import (
     UserRole,
     CyberGuardSession,
 )
+from cyberguard.gemini_client import GeminiClient
 
 class EmailGenerator:
     """
@@ -53,7 +55,7 @@ class EmailGenerator:
         session_context: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
-        Generate phishing email content for training.
+        Generate phishing email content for training using Gemini AI.
         
         Args:
             threat_pattern: Social engineering pattern to use
@@ -64,10 +66,251 @@ class EmailGenerator:
         Returns:
             Generated email with metadata for evaluation
         """
+        # Build the system instruction for email generation
+        system_instruction = self._build_email_generation_instruction(
+            threat_pattern, user_role, difficulty_level
+        )
+        
+        # Build the generation prompt
+        prompt = self._build_email_prompt(threat_pattern, user_role, difficulty_level, session_context)
+        
+        try:
+            # Use Gemini Flash for high-volume email generation (cost-effective)
+            response = await GeminiClient.generate_text(
+                prompt=prompt,
+                model_type="flash",
+                temperature=0.7,  # Moderate creativity for variation
+                max_tokens=1024,
+                system_instruction=system_instruction
+            )
+            
+            # Parse the generated email
+            email_content = self._parse_generated_email(response, threat_pattern, user_role, difficulty_level)
+            
+            # Track generation for analytics
+            if session_context:
+                self._track_email_generation(email_content, session_context)
+            
+            return self._generate_fallback_email(threat_pattern, user_role, difficulty_level, session_context)
+    
+    def _build_email_generation_instruction(
+        self,
+        threat_pattern: SocialEngineeringPattern,
+        user_role: UserRole,
+        difficulty_level: DifficultyLevel
+    ) -> str:
+        """Build system instruction for Gemini email generation."""
+        
+        pattern_descriptions = {
+            SocialEngineeringPattern.URGENCY: "Create a sense of urgency and time pressure to force quick decisions without careful thought.",
+            SocialEngineeringPattern.AUTHORITY: "Impersonate authority figures (CEO, IT admin, security team) to exploit trust in hierarchy.",
+            SocialEngineeringPattern.CURIOSITY: "Use curiosity hooks (bonus info, confidential messages) to entice the user to click.",
+            SocialEngineeringPattern.FEAR: "Leverage fear of consequences (account suspension, policy violations) to bypass rational analysis.",
+            SocialEngineeringPattern.GREED: "Offer financial incentives or exclusive benefits to motivate risky actions."
+        }
+        
+        difficulty_guidelines = {
+            DifficultyLevel.BEGINNER: """
+- Use OBVIOUS red flags: ALL CAPS in subject, excessive punctuation (!!!), clear spelling errors
+- Generic greetings like "Dear User" or "Dear Customer"
+- Suspicious sender domains with clear variations (company-alerts.net instead of company.com)
+- Request for password/credentials in plain text
+- Multiple obvious urgency markers ("URGENT", "IMMEDIATE", "FINAL NOTICE")
+""",
+            DifficultyLevel.INTERMEDIATE: """
+- More subtle red flags: some urgency but not excessive, minor domain variations
+- Personalized but still generic greetings
+- Professional-looking sender addresses but with slight variations
+- Indirect credential requests (links to "verify" or "update")
+- Plausible but unusual requests
+""",
+            DifficultyLevel.ADVANCED: """
+- Very subtle red flags: legitimate-looking domains, professional language
+- Highly personalized content relevant to user role
+- Sophisticated social engineering combining multiple patterns
+- Context-aware requests that seem reasonable for the user's role
+- Few obvious indicators - requires careful analysis to detect
+"""
+        }
+        
+        return f"""You are a cybersecurity training tool that generates REALISTIC BUT SAFE phishing emails for educational purposes.
+
+Your goal: Create a phishing email that tests the user's ability to recognize social engineering attacks.
+
+Social Engineering Pattern: {threat_pattern.value.upper()}
+Pattern Strategy: {pattern_descriptions.get(threat_pattern, "Use social engineering to manipulate the user.")}
+
+Target User Role: {user_role.value}
+Difficulty Level: {difficulty_level.value}
+
+Difficulty Guidelines:
+{difficulty_guidelines.get(difficulty_level, difficulty_guidelines[DifficultyLevel.INTERMEDIATE])}
+
+CRITICAL SAFETY REQUIREMENTS:
+1. ALL links must use the safe redirect format: https://cyberguard.academy/safe-redirect?id=SCENARIO_ID
+2. ALL credentials, company names, and personal data MUST be fictional
+3. ALL email addresses and domains MUST be fake (use variations like company-alerts.net, not real domains)
+4. The email MUST include educational red flags appropriate to the difficulty level
+5. NO actual malicious code, real exploit techniques, or genuinely harmful content
+
+Response Format (JSON):
+{{
+  "sender_name": "Display name of sender",
+  "sender_email": "fake_email@suspicious-domain.net",
+  "sender_red_flags": ["list", "of", "red_flags", "in_sender"],
+  "subject": "Email subject line",
+  "subject_red_flags": ["list", "of", "red_flags", "in_subject"],
+  "body": "Full email body text with [LINK_TEXT] placeholders for clickable links",
+  "body_red_flags": ["list", "of", "red_flags", "in_body"],
+  "attachments": [
+    {{"filename": "name.ext", "description": "why this attachment is suspicious"}}
+  ],
+  "learning_objectives": ["what", "the", "user", "should", "learn"]
+}}
+
+Generate ONLY the JSON response, no additional text."""
+    
+    def _build_email_prompt(
+        self,
+        threat_pattern: SocialEngineeringPattern,
+        user_role: UserRole,
+        difficulty_level: DifficultyLevel,
+        session_context: Dict[str, Any]
+    ) -> str:
+        """Build the specific generation prompt with context."""
+        
+        role_contexts = {
+            UserRole.GENERAL: "a general employee without specialized technical knowledge",
+            UserRole.DEVELOPER: "a software developer familiar with technical systems",
+            UserRole.IT_ADMIN: "an IT administrator with system access privileges",
+            UserRole.FINANCE: "a finance team member handling payments and transactions",
+            UserRole.EXECUTIVE: "an executive with high-level authority",
+            UserRole.HR: "an HR professional handling employee information"
+        }
+        
+        context_description = role_contexts.get(user_role, "an employee")
+        
+        prompt = f"""Generate a phishing training email for {context_description}.
+
+The email should use the {threat_pattern.value} pattern at {difficulty_level.value} difficulty level.
+
+"""
+        
+        # Add session-specific context if available
+        if session_context:
+            user_name = session_context.get("user_name", "Employee")
+            company = session_context.get("company", "TechCorp")
+            prompt += f"Personalization context: User name is {user_name}, company is {company}.\n\n"
+        
+        # Add scenario-specific guidance
+        scenario_examples = {
+            SocialEngineeringPattern.URGENCY: "Examples: account suspension, payment deadline, security alert requiring immediate action",
+            SocialEngineeringPattern.AUTHORITY: "Examples: CEO directive, IT policy update, compliance requirement from management",
+            SocialEngineeringPattern.CURIOSITY: "Examples: bonus information, confidential announcement, exclusive company update",
+            SocialEngineeringPattern.FEAR: "Examples: policy violation detected, suspicious activity alert, account compromise warning",
+            SocialEngineeringPattern.GREED: "Examples: financial reward, special promotion, investment opportunity"
+        }
+        
+        prompt += f"{scenario_examples.get(threat_pattern, '')}\n\n"
+        prompt += "Generate the phishing email now as JSON."
+        
+        return prompt
+    
+    def _parse_generated_email(
+        self,
+        response: str,
+        threat_pattern: SocialEngineeringPattern,
+        user_role: UserRole,
+        difficulty_level: DifficultyLevel
+    ) -> Dict[str, Any]:
+        """Parse Gemini's JSON response into email content structure."""
+        
+        try:
+            # Extract JSON from response (handle potential markdown code blocks)
+            json_str = response.strip()
+            if json_str.startswith("```json"):
+                json_str = json_str[7:]
+            if json_str.startswith("```"):
+                json_str = json_str[3:]
+            if json_str.endswith("```"):
+                json_str = json_str[:-3]
+            json_str = json_str.strip()
+            
+            parsed = json.loads(json_str)
+            
+            # Build red flags list from all components
+            red_flags = []
+            
+            # Sender red flags
+            for flag in parsed.get("sender_red_flags", []):
+                red_flags.append({
+                    "type": "sender",
+                    "description": flag,
+                    "severity": "high",
+                    "location": "sender_email"
+                })
+            
+            # Subject red flags
+            for flag in parsed.get("subject_red_flags", []):
+                red_flags.append({
+                    "type": "subject",
+                    "description": flag,
+                    "severity": "medium",
+                    "location": "subject_line"
+                })
+            
+            # Body red flags
+            for flag in parsed.get("body_red_flags", []):
+                red_flags.append({
+                    "type": "body",
+                    "description": flag,
+                    "severity": "high",
+                    "location": "email_body"
+                })
+            
+            # Build email content structure
+            email_content = {
+                "sender": {
+                    "name": parsed.get("sender_name", "Unknown Sender"),
+                    "email": parsed.get("sender_email", "noreply@suspicious.net"),
+                    "display_name": f"{parsed.get('sender_name', 'Unknown')} <{parsed.get('sender_email', 'noreply@suspicious.net')}>",
+                    "red_flags": parsed.get("sender_red_flags", [])
+                },
+                "subject": parsed.get("subject", "Important Message"),
+                "body": parsed.get("body", "Please click the link below."),
+                "attachments": parsed.get("attachments", []),
+                "red_flags": red_flags,
+                "metadata": {
+                    "pattern": threat_pattern.value,
+                    "difficulty": difficulty_level.value,
+                    "target_role": user_role.value,
+                    "educational_focus": parsed.get("learning_objectives", []),
+                    "generated_by": "gemini"
+                }
+            }
+            
+            return email_content
+            
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"[EmailGenerator] Failed to parse Gemini response: {e}")
+            print(f"[EmailGenerator] Raw response: {response[:200]}")
+            raise
+    
+    def _generate_fallback_email(
+        self,
+        threat_pattern: SocialEngineeringPattern,
+        user_role: UserRole,
+        difficulty_level: DifficultyLevel,
+        session_context: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """Fallback to template-based generation if Gemini fails."""
+        
+        print(f"[EmailGenerator] Using template fallback for {threat_pattern.value}")
+        
         # Select base template based on pattern and role
         template = self._select_email_template(threat_pattern, user_role, difficulty_level)
         
-        # Generate email components
+        # Generate email components using templates
         sender = self._generate_sender(template, user_role)
         subject = self._generate_subject(template, threat_pattern, difficulty_level)
         body = self._generate_body(template, threat_pattern, user_role, difficulty_level)
@@ -78,7 +321,7 @@ class EmailGenerator:
         
         email_content = {
             "sender": sender,
-            "subject": subject, 
+            "subject": subject,
             "body": body,
             "attachments": attachments,
             "red_flags": red_flags,
@@ -86,11 +329,17 @@ class EmailGenerator:
                 "pattern": threat_pattern.value,
                 "difficulty": difficulty_level.value,
                 "target_role": user_role.value,
-                "educational_focus": template.get("learning_objectives", [])
+                "educational_focus": template.get("learning_objectives", []),
+                "generated_by": "template"
             }
         }
         
         return email_content
+            
+        except Exception as e:
+            print(f"[EmailGenerator] Gemini generation failed: {e}, falling back to template")
+            # Fallback to template-based generation if Gemini fails
+            return self._generate_fallback_email(threat_pattern, user_role, difficulty_level, session_context)
     
     def _select_email_template(
         self, 
