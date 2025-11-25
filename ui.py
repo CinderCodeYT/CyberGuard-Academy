@@ -252,13 +252,7 @@ if st.session_state.scenario_active and not st.session_state.evaluation_data:
     user_input = st.chat_input("Your response...", key="user_input")
     
     if user_input:
-        # Add user message to history
-        st.session_state.conversation_history.append({
-            "role": "user",
-            "content": user_input
-        })
-        
-        # Send to API
+        # Send to API (API handles adding to conversation history)
         with st.spinner("Processing..."):
             response = send_user_action(
                 session_id=st.session_state.session_id,
@@ -267,11 +261,11 @@ if st.session_state.scenario_active and not st.session_state.evaluation_data:
             )
         
         if response:
-            # Add Game Master response
-            st.session_state.conversation_history.append({
-                "role": "game_master",
-                "content": response["narrative"]
-            })
+            # Sync conversation history from API response
+            # Get latest messages from session
+            session_data = requests.get(f"{API_BASE_URL}/sessions/{st.session_state.session_id}").json()
+            if session_data:
+                st.session_state.conversation_history = session_data.get("conversation_history", [])
             
             # Check if scenario is complete
             if response.get("scenario_complete", False):

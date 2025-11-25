@@ -1,5 +1,7 @@
 # CyberGuard Academy: Cybersecurity Training Through Interactive Role-Playing
 
+> **⚠️ Important Update:** This project now uses **Vertex AI** instead of the consumer Gemini API for better safety control of educational security content. See [VERTEX_AI_MIGRATION.md](VERTEX_AI_MIGRATION.md) for setup instructions.
+
 ## 🎯 Project Overview
 
 CyberGuard Academy is a Level 3 Collaborative Multi-Agent system (with Level 4 self-evolving potential) that revolutionizes cybersecurity awareness training by transforming traditional security education into engaging, conversational role-playing scenarios.

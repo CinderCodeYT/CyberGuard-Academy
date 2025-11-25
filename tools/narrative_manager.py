@@ -59,19 +59,19 @@ class NarrativeManager:
         scenario_type = scenario_details.get("id", "generic")
         user_role = user_context.user_role if hasattr(user_context, 'user_role') else UserRole.GENERAL
         
-        system_instruction = """You are the Game Master for CyberGuard Academy, a cybersecurity training simulation.
+        system_instruction = """You are a training facilitator for corporate security awareness education.
 
-Your role is to create immersive, realistic workplace scenarios that naturally lead into security situations.
+**CONTEXT**: You help employees practice recognizing security threats in a safe training environment.
 
-CRITICAL RULES:
-1. NEVER reveal this is training or a simulation
-2. NEVER use words like "scenario", "test", "exercise", or "training"
-3. Maintain complete immersion - the user should feel they are in a real workplace situation
-4. Use natural, conversational language
-5. Keep responses concise (2-3 short paragraphs max)
-6. Set the scene naturally without heavy exposition
+Your role: Create realistic workplace scenarios for security awareness training.
 
-Your goal: Create an engaging opening that makes the user feel they're starting a normal workday that will naturally involve the security situation."""
+GUIDELINES:
+1. Write naturally as if describing a normal workday
+2. Don't mention "training", "test", or "scenario" 
+3. Keep it conversational and brief (2-3 paragraphs)
+4. Set up the situation naturally
+
+Goal: Create an engaging training exercise opening."""
         
         prompt = f"""Generate an opening narrative for a cybersecurity training scenario.
 
@@ -183,11 +183,11 @@ Present the threat as something that just happened in their workday."""
         
         # Detect security-related keywords and actions
         security_actions = {
-            "verify": ["verify", "check", "confirm", "validate"],
-            "report": ["report", "forward", "escalate", "notify"],
-            "ignore": ["ignore", "delete", "discard", "skip"],
-            "click": ["click", "open", "download", "access"],
-            "respond": ["reply", "respond", "answer", "send"]
+            "verify": ["verify", "check", "confirm", "validate", "call", "contact", "ask", "inquire", "sender"],
+            "report": ["report", "forward", "escalate", "notify", "alert", "flag"],
+            "ignore": ["ignore", "delete", "discard", "skip", "trash"],
+            "click": ["click", "open", "download", "access", "view", "link"],
+            "respond": ["reply", "respond", "answer", "send", "email back"]
         }
         
         detected_action = "unclear"
@@ -271,18 +271,35 @@ CRITICAL RULES:
 
 Your goal: Acknowledge their action and naturally guide the scenario forward."""
         
+        # Build conversation context (last 6 turns to include threat presentation)
+        conversation_context = ""
+        if session_context.conversation_history:
+            recent_history = session_context.conversation_history[-6:]
+            conversation_context = "Recent conversation:\n"
+            for msg in recent_history:
+                role = msg.get("role", "unknown")
+                content = msg.get("content", "")
+                # Limit each message to 300 chars to avoid token bloat
+                conversation_context += f"{role.upper()}: {content[:300]}\n"
+        
         prompt = f"""The user just took this action: {user_action}
 Decision quality: {decision_quality}
 Scenario type: {session_context.scenario_type.value if session_context.scenario_type else 'unknown'}
 Current phase: {session_context.current_phase}
 
+{conversation_context}
+
 Generate a brief, natural response that:
 1. Acknowledges what they just did
 2. Reflects the quality of their decision (excellent/good/poor/acceptable)
-3. Moves the scenario forward naturally
+3. Moves the scenario forward naturally (e.g., if they asked to "check sender", show the sender info)
 4. Stays in character as their immersive work environment
 
 Keep it conversational and brief (1-2 short paragraphs)."""
+        
+        print(f"[NarrativeManager DEBUG] Generating adaptive response for action: {user_action}")
+        print(f"[NarrativeManager DEBUG] Decision quality: {decision_quality}")
+        print(f"[NarrativeManager DEBUG] Prompt: {prompt[:200]}...")
         
         try:
             response = await GeminiClient.generate_text(
@@ -292,6 +309,8 @@ Keep it conversational and brief (1-2 short paragraphs)."""
                 max_tokens=256,
                 system_instruction=system_instruction
             )
+            
+            print(f"[NarrativeManager DEBUG] AI response: {response[:100]}...")
             
             return response.strip()
             

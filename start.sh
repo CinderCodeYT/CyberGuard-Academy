@@ -15,21 +15,51 @@ if [ ! -f .env ]; then
     echo "📝 Creating .env from .env.example..."
     cp .env.example .env
     echo ""
-    echo "⚠️  IMPORTANT: Please edit .env and add your GOOGLE_API_KEY"
-    echo "   Get your free API key from: https://aistudio.google.com/app/apikey"
+    echo "⚠️  IMPORTANT: Please edit .env and configure your AI provider"
     echo ""
-    echo "   After adding your API key, run this script again."
+    echo "   For Groq (Recommended - Free):"
+    echo "   1. Get API key from: https://console.groq.com/"
+    echo "   2. Set: AI_PROVIDER=groq"
+    echo "   3. Set: GROQ_API_KEY=your_key_here"
+    echo ""
+    echo "   After configuration, run this script again."
     exit 1
 fi
 
-# Check if GOOGLE_API_KEY is set
-if ! grep -q "GOOGLE_API_KEY=.*[a-zA-Z0-9]" .env; then
-    echo "⚠️  GOOGLE_API_KEY not configured in .env"
+# Check if AI provider is configured
+AI_PROVIDER=$(grep -E "^AI_PROVIDER=" .env | cut -d'=' -f2 | tr -d ' "' || echo "")
+
+if [ -z "$AI_PROVIDER" ]; then
+    echo "⚠️  AI_PROVIDER not set in .env"
     echo ""
-    echo "   Please edit .env and add your API key:"
-    echo "   GOOGLE_API_KEY=your_api_key_here"
+    echo "   Please edit .env and set:"
+    echo "   AI_PROVIDER=groq  (recommended)"
     echo ""
-    echo "   Get your free API key from: https://aistudio.google.com/app/apikey"
+    exit 1
+fi
+
+# Check if API key is configured based on provider
+if [ "$AI_PROVIDER" = "groq" ]; then
+    if ! grep -q "GROQ_API_KEY=.*[a-zA-Z0-9]" .env; then
+        echo "⚠️  GROQ_API_KEY not configured in .env"
+        echo ""
+        echo "   Please edit .env and add your Groq API key:"
+        echo "   GROQ_API_KEY=gsk_your_key_here"
+        echo ""
+        echo "   Get your free API key from: https://console.groq.com/"
+        exit 1
+    fi
+elif [ "$AI_PROVIDER" = "vertex" ]; then
+    if ! grep -q "GOOGLE_CLOUD_PROJECT=.*[a-zA-Z0-9]" .env; then
+        echo "⚠️  GOOGLE_CLOUD_PROJECT not configured in .env"
+        echo ""
+        echo "   Please edit .env and add your GCP project ID"
+        echo "   GOOGLE_CLOUD_PROJECT=your-project-id"
+        exit 1
+    fi
+else
+    echo "⚠️  Invalid AI_PROVIDER: $AI_PROVIDER"
+    echo "   Must be 'groq' or 'vertex'"
     exit 1
 fi
 
@@ -58,20 +88,27 @@ sleep 1
 
 # Start API server
 echo "🚀 Starting API Server..."
-python api.py > api.log 2>&1 &
+uvicorn api:app --host 0.0.0.0 --port 8000 > api.log 2>&1 &
 API_PID=$!
 
 # Wait for API to be ready
-echo "⏳ Waiting for API to be ready..."
+echo "⏳ Waiting for API to be ready (initializing agents)..."
 for i in {1..30}; do
     if curl -s http://localhost:8000/health > /dev/null 2>&1; then
         echo "✅ API Server is ready!"
         break
     fi
     
+    # Show progress every 3 seconds
+    if [ $((i % 3)) -eq 0 ]; then
+        echo "   Still initializing... (${i}s elapsed)"
+    fi
+    
     if [ $i -eq 30 ]; then
-        echo "❌ API Server failed to start. Check api.log for details."
-        cat api.log
+        echo "❌ API Server failed to start within 30 seconds. Check api.log for details."
+        echo ""
+        echo "Last 30 lines of api.log:"
+        tail -30 api.log
         kill $API_PID 2>/dev/null || true
         exit 1
     fi

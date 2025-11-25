@@ -91,6 +91,11 @@ class EmailGenerator:
             if session_context:
                 self._track_email_generation(email_content, session_context)
             
+            return email_content
+            
+        except Exception as e:
+            print(f"[EmailGenerator] Gemini generation failed: {e}, falling back to template")
+            # Fallback to template-based generation if Gemini fails
             return self._generate_fallback_email(threat_pattern, user_role, difficulty_level, session_context)
     
     def _build_email_generation_instruction(
@@ -133,42 +138,42 @@ class EmailGenerator:
 """
         }
         
-        return f"""You are a cybersecurity training tool that generates REALISTIC BUT SAFE phishing emails for educational purposes.
+        return f"""You are an educational cybersecurity trainer creating TRAINING EXAMPLES for security awareness.
 
-Your goal: Create a phishing email that tests the user's ability to recognize social engineering attacks.
+**CONTEXT**: You are creating EXAMPLES for authorized corporate security training. This is NOT for actual attacks.
 
-Social Engineering Pattern: {threat_pattern.value.upper()}
-Pattern Strategy: {pattern_descriptions.get(threat_pattern, "Use social engineering to manipulate the user.")}
+Your task: Create an example email that demonstrates social engineering tactics for EDUCATIONAL ANALYSIS.
 
-Target User Role: {user_role.value}
-Difficulty Level: {difficulty_level.value}
+Training Pattern to Demonstrate: {threat_pattern.value.upper()}
+Pattern Description: {pattern_descriptions.get(threat_pattern, "Demonstrates social engineering tactics")}
 
-Difficulty Guidelines:
+Learner Role: {user_role.value}
+Training Difficulty: {difficulty_level.value}
+
+Training Guidelines for Difficulty Level:
 {difficulty_guidelines.get(difficulty_level, difficulty_guidelines[DifficultyLevel.INTERMEDIATE])}
 
-CRITICAL SAFETY REQUIREMENTS:
-1. ALL links must use the safe redirect format: https://cyberguard.academy/safe-redirect?id=SCENARIO_ID
-2. ALL credentials, company names, and personal data MUST be fictional
-3. ALL email addresses and domains MUST be fake (use variations like company-alerts.net, not real domains)
-4. The email MUST include educational red flags appropriate to the difficulty level
-5. NO actual malicious code, real exploit techniques, or genuinely harmful content
+TRAINING REQUIREMENTS:
+1. Links must use format: https://training.example.com/safe-link?id=DEMO123
+2. Use fictional names like "John Smith" and fictional companies like "AcmeCorp" or "TechSolutions Inc"
+3. Use training domain examples like "notices-acme.info" or "alerts-techco.net" (NOT real domains)
+4. Include learning indicators (red flags) appropriate to difficulty level
+5. This is a DEMONSTRATION EMAIL for TRAINING PURPOSES ONLY
 
-Response Format (JSON):
+Example JSON Response Format:
 {{
-  "sender_name": "Display name of sender",
-  "sender_email": "fake_email@suspicious-domain.net",
-  "sender_red_flags": ["list", "of", "red_flags", "in_sender"],
-  "subject": "Email subject line",
-  "subject_red_flags": ["list", "of", "red_flags", "in_subject"],
-  "body": "Full email body text with [LINK_TEXT] placeholders for clickable links",
-  "body_red_flags": ["list", "of", "red_flags", "in_body"],
-  "attachments": [
-    {{"filename": "name.ext", "description": "why this attachment is suspicious"}}
-  ],
-  "learning_objectives": ["what", "the", "user", "should", "learn"]
+  "sender_name": "IT Department",
+  "sender_email": "support@it-notices.info",
+  "sender_red_flags": ["domain_mismatch", "generic_sender"],
+  "subject": "Action Required: Update Your Password",
+  "subject_red_flags": ["urgency_language"],
+  "body": "Dear Team Member,\\n\\nOur records show your password needs updating. Please click here to update: [UPDATE NOW]\\n\\nThank you,\\nIT Support Team",
+  "body_red_flags": ["generic_greeting", "urgent_action_request"],
+  "attachments": [],
+  "learning_objectives": ["Identify sender verification needs", "Recognize urgency tactics"]
 }}
 
-Generate ONLY the JSON response, no additional text."""
+Generate the training example as JSON only (no extra text)."""
     
     def _build_email_prompt(
         self,
@@ -303,43 +308,147 @@ The email should use the {threat_pattern.value} pattern at {difficulty_level.val
         difficulty_level: DifficultyLevel,
         session_context: Dict[str, Any] = None
     ) -> Dict[str, Any]:
-        """Fallback to template-based generation if Gemini fails."""
+        """Fallback to template-based generation if Gemini fails. NOW WITH RANDOMIZATION."""
         
         print(f"[EmailGenerator] Using template fallback for {threat_pattern.value}")
         
-        # Select base template based on pattern and role
-        template = self._select_email_template(threat_pattern, user_role, difficulty_level)
+        import random
+        import hashlib
+        import time
         
-        # Generate email components using templates
-        sender = self._generate_sender(template, user_role)
-        subject = self._generate_subject(template, threat_pattern, difficulty_level)
-        body = self._generate_body(template, threat_pattern, user_role, difficulty_level)
-        attachments = self._generate_attachments(template, difficulty_level)
+        # Use time-based seed for variation
+        random.seed(int(time.time()))
         
-        # Embed red flags for educational value
-        red_flags = self._embed_red_flags(sender, subject, body, difficulty_level)
+        # Randomized sender variations
+        sender_variations = {
+            "security_team": [
+                {"name": "IT Security Team", "email": "security@company-alerts.net", "domain_var": "company-alerts.net"},
+                {"name": "Security Operations", "email": "secops@corporate-security.info", "domain_var": "corporate-security.info"},
+                {"name": "Cyber Security Dept", "email": "cybersec@it-notices.com", "domain_var": "it-notices.com"},
+            ],
+            "it_admin": [
+                {"name": "System Administrator", "email": "admin@company-it.org", "domain_var": "company-it.org"},
+                {"name": "IT Support", "email": "support@tech-services.net", "domain_var": "tech-services.net"},
+                {"name": "Help Desk", "email": "helpdesk@it-support.info", "domain_var": "it-support.info"},
+            ]
+        }
+        
+        # Randomized subject variations
+        subject_variations = {
+            SocialEngineeringPattern.URGENCY: [
+                "URGENT: Account Suspension Notice",
+                "IMMEDIATE ACTION REQUIRED - Security Alert",
+                "Your account will be closed in 24 hours",
+                "FINAL NOTICE: Verify your account immediately",
+                "Action Required: Update Your Security Settings",
+            ],
+            SocialEngineeringPattern.AUTHORITY: [
+                "New IT Policy - Immediate Compliance Required",
+                "CEO Directive: Update Your Credentials",
+                "Mandatory: Password Reset Required",
+                "IT Security: Policy Update Notification",
+            ]
+        }
+        
+        # Randomized body variations
+        body_variations = {
+            "urgency": [
+                "suspicious activity",
+                "unusual login attempts",
+                "unauthorized access detected",
+                "security policy violation",
+            ],
+            "action": [
+                "verify your identity",
+                "confirm your account",
+                "update your credentials",
+                "review your security settings",
+            ],
+            "timeframe": [
+                "within 24 hours",
+                "immediately",
+                "by end of day",
+                "within the next 12 hours",
+            ]
+        }
+        
+        # Select random variations
+        sender_type = "security_team" if threat_pattern == SocialEngineeringPattern.URGENCY else "it_admin"
+        sender_options = sender_variations.get(sender_type, sender_variations["security_team"])
+        sender_data = random.choice(sender_options)
+        
+        subject_options = subject_variations.get(threat_pattern, subject_variations[SocialEngineeringPattern.URGENCY])
+        subject = random.choice(subject_options)
+        
+        # Build randomized body
+        reason = random.choice(body_variations["urgency"])
+        action = random.choice(body_variations["action"])
+        timeframe = random.choice(body_variations["timeframe"])
+        
+        body = f"""Dear User,
+
+We have detected {reason} on your account that requires immediate attention.
+
+Your account will be suspended unless you {action} {timeframe} by clicking the link below:
+
+[VERIFY ACCOUNT NOW]
+
+If you do not complete verification, you will lose access to all company systems.
+
+Best regards,
+{sender_data['name']}"""
+        
+        # Add difficulty-based variations
+        if difficulty_level == DifficultyLevel.BEGINNER:
+            # Make it more obvious
+            subject = f"!!!{subject}!!!"
+            body = body.replace("suspicious", "suspicous")  # Add typo
+            body += "\n\nSend your password to: " + sender_data['email']
+        
+        sender = {
+            "name": sender_data["name"],
+            "email": sender_data["email"],
+            "display_name": f"{sender_data['name']} <{sender_data['email']}>",
+            "red_flags": ["domain_variation", "external_domain"]
+        }
+        
+        red_flags = [
+            {
+                "type": "sender_domain",
+                "description": f"Sender domain ({sender_data['domain_var']}) doesn't match organization",
+                "severity": "high",
+                "location": "sender_email"
+            },
+            {
+                "type": "artificial_urgency",
+                "description": "Excessive urgency language to pressure quick action",
+                "severity": "medium",
+                "location": "subject_line"
+            },
+            {
+                "type": "credential_request",
+                "description": "Requests sensitive authentication information",
+                "severity": "high",
+                "location": "email_body"
+            }
+        ]
         
         email_content = {
             "sender": sender,
             "subject": subject,
             "body": body,
-            "attachments": attachments,
+            "attachments": [],
             "red_flags": red_flags,
             "metadata": {
                 "pattern": threat_pattern.value,
                 "difficulty": difficulty_level.value,
                 "target_role": user_role.value,
-                "educational_focus": template.get("learning_objectives", []),
-                "generated_by": "template"
+                "educational_focus": ["verify_sender", "check_urgency", "validate_links"],
+                "generated_by": "template_randomized"
             }
         }
         
         return email_content
-            
-        except Exception as e:
-            print(f"[EmailGenerator] Gemini generation failed: {e}, falling back to template")
-            # Fallback to template-based generation if Gemini fails
-            return self._generate_fallback_email(threat_pattern, user_role, difficulty_level, session_context)
     
     def _select_email_template(
         self, 

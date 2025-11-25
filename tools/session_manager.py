@@ -54,8 +54,9 @@ class SessionManager:
             # Load active session registry
             await self._load_active_sessions_registry()
             
-            # Clean up expired sessions
-            await self._cleanup_expired_sessions()
+            # Skip expensive cleanup on startup - will happen on first session access
+            # This prevents 2+ minute startup times with many sessions on disk
+            logger.info(f"[SessionManager] Loaded {len(self.active_sessions)} active sessions (cleanup deferred)")
             
             logger.info("[SessionManager] Session manager initialized")
             

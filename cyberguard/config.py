@@ -16,26 +16,32 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
     
     # Environment Configuration
-    environment: str = Field(default="development", description="Deployment environment")
+    environment: str = Field(default="production", description="Deployment environment")
     debug: bool = Field(default=True, description="Enable debug mode")
     log_level: str = Field(default="INFO", description="Logging level")
     
+    # AI Provider Configuration
+    ai_provider: str = Field(default="groq", description="AI provider: 'groq' or 'vertex'")
+    groq_api_key: str = Field(default="", description="Groq API key")
+    
+    # Google Cloud Configuration (for Vertex AI)
+    google_cloud_project: str = Field(default="", description="GCP project ID")
+    google_cloud_region: str = Field(default="us-central1", description="GCP region")
+    vertex_ai_location: str = Field(default="us-central1", description="Vertex AI location")
+    
     # Model Configuration
-    gemini_pro_model: str = Field(default="gemini-2.5-pro", description="Gemini Pro model identifier")
-    gemini_flash_model: str = Field(default="gemini-2.5-flash", description="Gemini Flash model identifier")
+    # For Groq: llama-3.3-70b-versatile (pro), llama-3.1-8b-instant (flash)
+    # For Vertex: gemini-2.5-pro, gemini-2.5-flash
+    pro_model: str = Field(default="llama-3.3-70b-versatile", description="Pro model for complex reasoning")
+    flash_model: str = Field(default="llama-3.1-8b-instant", description="Flash model for high-volume generation")
     default_temperature_game_master: float = Field(default=0.3, description="Temperature for Game Master agent")
     default_temperature_threat_actors: float = Field(default=0.7, description="Temperature for threat actor agents")
     
     # Agent Configuration
-    max_conversation_turns: int = Field(default=15, description="Maximum turns per scenario")
+    max_conversation_turns: int = Field(default=25, description="Maximum turns per scenario")
     default_difficulty_level: int = Field(default=3, description="Starting difficulty level (1-5)")
     target_success_rate: float = Field(default=0.7, description="Target success rate for adaptive difficulty")
     session_timeout_minutes: int = Field(default=30, description="Session timeout in minutes")
-    
-    # Google Cloud Configuration
-    google_cloud_project: Optional[str] = Field(default=None, description="GCP project ID")
-    google_cloud_region: str = Field(default="us-central1", description="GCP region")
-    vertex_ai_location: str = Field(default="us-central1", description="Vertex AI location")
     
     # Security Configuration
     safe_redirect_base_url: str = Field(

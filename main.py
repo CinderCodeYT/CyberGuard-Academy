@@ -21,6 +21,7 @@ from loguru import logger
 
 # Core imports
 from cyberguard.config import settings
+from cyberguard.gemini_client import GeminiClient
 from cyberguard.models import (
     CyberGuardSession,
     ScenarioContext,
@@ -81,6 +82,10 @@ class CyberGuardOrchestrator:
         logger.info("Initializing all agents...")
         
         try:
+            # Initialize Gemini client first
+            logger.info("Initializing Gemini AI client...")
+            GeminiClient.initialize()
+            
             # Initialize agents in parallel for efficiency
             await asyncio.gather(
                 self.game_master.initialize(),
@@ -229,34 +234,24 @@ class CyberGuardOrchestrator:
         # Add user message to conversation history
         session.add_message("user", user_message)
         
-        # Track decision point for evaluation
-        decision_point = DecisionPoint(
-            turn=len(session.conversation_history),
-            vulnerability=session.scenario_type.value,
-            user_choice=action_type,
-            correct_choice="",  # Will be determined by evaluation agent
-            risk_score_impact=0.0  # Will be calculated by evaluation agent
-        )
-        session.record_decision(decision_point)
-        
-        # Process through Game Master
+        # Process through Game Master - pass session object directly to avoid stale copies
+        # Game Master will analyze the response and create decision points with proper evaluation data
         response = await self.game_master.handle_user_response(
             session_id=session.session_id,
-            user_input=user_message
+            user_input=user_message,
+            session=session
         )
         
-        # Extract narrative from response
+        # Extract narrative from response 
         narrative = response.get("content", response.get("narrative", ""))
-        
-        # Add Game Master response to conversation (only if not already added by handle_user_response)
-        if narrative and session.conversation_history[-1]["content"] != narrative:
-            session.add_message("game_master", narrative)
-        
-        # Update response to use 'narrative' key for API compatibility
         response["narrative"] = narrative
         
-        # Send decision to evaluation agent (invisible assessment)
-        await self._notify_evaluation_agent("decision_made", session, decision_point)
+        # Get the latest decision point if one was recorded by Game Master
+        decision_point = session.decision_points[-1] if session.decision_points else None
+        
+        # Send decision to evaluation agent (invisible assessment) if there was a decision
+        if decision_point:
+            await self._notify_evaluation_agent("decision_made", session, decision_point)
         
         # Update session storage
         await self.session_manager.save_session(session)

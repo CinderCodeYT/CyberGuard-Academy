@@ -104,6 +104,7 @@ class CyberGuardSession(BaseModel):
     
     # Session state
     current_state: str = Field(default="intro", description="Current stage of scenario progression")
+    current_phase: str = Field(default="intro", description="Current phase of the scenario")
     conversation_history: List[Dict[str, str]] = Field(default_factory=list, description="Complete dialogue history")
     decision_points: List[DecisionPoint] = Field(default_factory=list, description="Key user decisions for evaluation")
     threat_actor_active: Optional[str] = Field(None, description="Which threat agent is currently engaged")

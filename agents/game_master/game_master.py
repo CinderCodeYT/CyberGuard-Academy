@@ -86,16 +86,8 @@ class GameMasterAgent(OrchestratorAgent):
         await self.hint_provider.initialize()
         await self.debrief_generator.initialize()
         
-        # Verify threat agents are available (in production, this would check actual agent endpoints)
-        if settings.is_development:
-            print(f"[{self.agent_name}] Development mode: Using mock threat agents")
-        else:
-            # In production, ping each threat agent to verify availability
-            available_agents = await self.agent_coordinator.check_agent_availability(
-                self.available_threat_agents
-            )
-            self.available_threat_agents = available_agents
-            print(f"[{self.agent_name}] Available threat agents: {available_agents}")
+        # All threat agents are loaded in-process and available via agent_coordinator
+        print(f"[{self.agent_name}] Available threat agents: {self.available_threat_agents}")
         
         print(f"[{self.agent_name}] Game Master initialized successfully")
 
@@ -237,21 +229,21 @@ class GameMasterAgent(OrchestratorAgent):
     async def handle_user_response(
         self, 
         session_id: str, 
-        user_input: str
+        user_input: str,
+        session: Optional[CyberGuardSession] = None
     ) -> Dict[str, Any]:
         """
         Handle user input during an active scenario.
         
         This method orchestrates the complete flow of user interaction.
         """
-        if session_id not in self.active_sessions:
-            return {"error": f"Session {session_id} not found"}
+        # Use provided session or lookup
+        if session is None:
+            if session_id not in self.active_sessions:
+                return {"error": f"Session {session_id} not found"}
+            session = self.active_sessions[session_id]
         
-        session = self.active_sessions[session_id]
         print(f"[{self.agent_name}] Handling user response in session {session_id}")
-        
-        # Add user input to conversation
-        session.add_message("user", user_input)
         
         # Analyze user response for decision points
         decision_analysis = await self.narrative_manager.analyze_user_response(
@@ -393,7 +385,7 @@ class GameMasterAgent(OrchestratorAgent):
                 "scenario_complete": True
             }
         else:
-            session.current_state = "awaiting_decision"
+            # Stay in scenario_active - don't change state unless scenario is complete
             return {
                 "content": response_content,
                 "session_state": session.current_state,
