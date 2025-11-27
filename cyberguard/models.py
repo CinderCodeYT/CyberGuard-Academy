@@ -103,7 +103,7 @@ class CyberGuardSession(BaseModel):
     scenario_id: str = Field(..., description="Specific scenario being run")
     
     # Session state
-    current_state: str = Field(default="intro", description="Current stage of scenario progression")
+    current_state: str = Field(default="scenario_intro", description="Current stage of scenario progression")
     current_phase: str = Field(default="intro", description="Current phase of the scenario")
     conversation_history: List[Dict[str, str]] = Field(default_factory=list, description="Complete dialogue history")
     decision_points: List[DecisionPoint] = Field(default_factory=list, description="Key user decisions for evaluation")

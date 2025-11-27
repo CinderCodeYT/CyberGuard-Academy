@@ -300,7 +300,7 @@ class GameMasterAgent(OrchestratorAgent):
             )
         
         # Determine next response based on current state and user action
-        if session.current_state == "scenario_intro":
+        if session.current_state in ["scenario_intro", "intro"]:
             response = await self._handle_intro_response(session, user_input, decision_analysis)
         elif session.current_state == "scenario_active":
             response = await self._handle_active_scenario_response(session, user_input, decision_analysis)

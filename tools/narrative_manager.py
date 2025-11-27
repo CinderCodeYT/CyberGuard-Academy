@@ -341,7 +341,7 @@ Current phase: {session_context.current_phase}
 
 Generate a brief, natural response that:
 1. Continues the dialogue naturally. If the user asked a question, ANSWER IT directly in character.
-2. Do NOT re-narrate actions the user just took (e.g. don't say "You ask John..."). Just give the response or result.
+2. Do NOT re-narrate actions the user just took (e.g. don't say "You ask the manager..."). Just give the response or result.
 3. If the user is talking to someone (e.g. IT support), speak AS that person or describe their immediate reply.
 4. Reflect the quality of their decision if it was a security action.
 5. Moves the scenario forward naturally.
