@@ -273,7 +273,6 @@ MIT License - See [LICENSE](LICENSE) for details
 ---
 
 **Built with:**
-- 🤖 Google Agent Development Kit (ADK)
 - 🧠 Groq (Llama 3.3 70B & 3.1 8B)
 - ⚡ FastAPI & Streamlit
 - 🐍 Python 3.12+
