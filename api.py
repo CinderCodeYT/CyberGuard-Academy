@@ -15,7 +15,8 @@ import uuid
 
 from loguru import logger
 
-from main import get_orchestrator, CyberGuardOrchestrator
+from cyberguard.orchestrator import CyberGuardOrchestrator
+from main import get_orchestrator
 from cyberguard.models import (
     CyberGuardSession,
     UserRole,

@@ -29,7 +29,7 @@ from cyberguard.models import (
     UserRole
 )
 from cyberguard.config import settings
-from cyberguard.gemini_client import GeminiClient
+from cyberguard.groq_client import GroqClient
 from tools.scenario_selector import ScenarioSelector
 from tools.agent_coordinator import AgentCoordinator
 from tools.narrative_manager import NarrativeManager
@@ -176,15 +176,39 @@ class GameMasterAgent(OrchestratorAgent):
             vulnerability_areas=context.vulnerability_areas
         )
         
-        # Generate opening narrative
+        # Activate appropriate threat actor based on scenario type
+        threat_agent = f"{scenario_type}_agent"
+        session.threat_actor_active = threat_agent
+        
+        # Request threat scenario from specialized agent
+        threat_response = None
+        if threat_agent in self.available_threat_agents:
+            print(f"[{self.agent_name}] Coordinating with {threat_agent} for scenario generation")
+            threat_response = await self.coordinate_with_agent(
+                target_agent=threat_agent,
+                action="generate_scenario",
+                context={
+                    "session_id": session.session_id,
+                    "user_role": context.user_role.value,
+                    "difficulty": context.difficulty_level.value,
+                    "scenario_details": scenario_details
+                }
+            )
+            # Persist threat content in session for consistent context
+            if threat_response and "scenario_content" in threat_response:
+                session.threat_content = threat_response["scenario_content"]
+        
+        # Generate complete opening narrative including the threat presentation
         opening_narrative = await self.narrative_manager.generate_opening(
             scenario_details=scenario_details,
-            user_context=context
+            user_context=context,
+            threat_content=threat_response.get("scenario_content", {}) if threat_response else None
         )
         
         # Add opening to conversation
         session.add_message("game_master", opening_narrative)
-        session.current_state = "scenario_intro"
+        # Start directly in active state - the opening already includes the threat
+        session.current_state = "scenario_active"
         
         print(f"[{self.agent_name}] Scenario {session.session_id} started successfully")
         return session
@@ -302,7 +326,13 @@ class GameMasterAgent(OrchestratorAgent):
         user_input: str, 
         decision_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Handle user response during scenario introduction."""
+        """
+        Handle user response during scenario introduction.
+        
+        NOTE: As of the current implementation, scenarios now start directly in 'scenario_active' state
+        with the threat already presented in the opening narrative. This method is retained as a fallback
+        for backward compatibility or alternative flows where the threat needs to be presented separately.
+        """
         
         # Activate appropriate threat actor based on scenario type
         threat_agent = f"{session.scenario_type.value}_agent"
@@ -371,7 +401,8 @@ class GameMasterAgent(OrchestratorAgent):
         narrative = await self.narrative_manager.generate_adaptive_response(
             user_action=decision_analysis.get("user_action", "unclear"),
             session_context=session,
-            decision_quality=decision_analysis.get("decision_quality", "neutral")
+            decision_quality=decision_analysis.get("decision_quality", "neutral"),
+            user_input=user_input
         )
         
         response_content += narrative
@@ -475,7 +506,7 @@ class GameMasterAgent(OrchestratorAgent):
             target_agent="evaluation_agent",
             action="evaluate_session",
             context={
-                "session": session.model_dump(),
+                "session": session.model_dump(mode='json'),
                 "completion_reason": reason
             }
         )
@@ -485,7 +516,7 @@ class GameMasterAgent(OrchestratorAgent):
             target_agent="memory_agent",
             action="store_session",
             context={
-                "session": session.model_dump(),
+                "session": session.model_dump(mode='json'),
                 "evaluation_results": evaluation_response
             }
         )

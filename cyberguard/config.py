@@ -21,17 +21,11 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
     
     # AI Provider Configuration
-    ai_provider: str = Field(default="groq", description="AI provider: 'groq' or 'vertex'")
+    ai_provider: str = Field(default="groq", description="AI provider: 'groq'")
     groq_api_key: str = Field(default="", description="Groq API key")
-    
-    # Google Cloud Configuration (for Vertex AI)
-    google_cloud_project: str = Field(default="", description="GCP project ID")
-    google_cloud_region: str = Field(default="us-central1", description="GCP region")
-    vertex_ai_location: str = Field(default="us-central1", description="Vertex AI location")
     
     # Model Configuration
     # For Groq: llama-3.3-70b-versatile (pro), llama-3.1-8b-instant (flash)
-    # For Vertex: gemini-2.5-pro, gemini-2.5-flash
     pro_model: str = Field(default="llama-3.3-70b-versatile", description="Pro model for complex reasoning")
     flash_model: str = Field(default="llama-3.1-8b-instant", description="Flash model for high-volume generation")
     default_temperature_game_master: float = Field(default=0.3, description="Temperature for Game Master agent")

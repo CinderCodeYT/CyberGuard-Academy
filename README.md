@@ -1,6 +1,6 @@
 # CyberGuard Academy: Cybersecurity Training Through Interactive Role-Playing
 
-> **⚠️ Important Update:** This project now uses **Vertex AI** instead of the consumer Gemini API for better safety control of educational security content. See [VERTEX_AI_MIGRATION.md](VERTEX_AI_MIGRATION.md) for setup instructions.
+
 
 ## 🎯 Project Overview
 
@@ -75,11 +75,9 @@ An intelligent multi-agent system that addresses these challenges through:
 - Evaluation Framework: Behavioral measurement, A/B testing, ROI calculation
 
 ### Technology Stack
-- Framework: Google Agent Development Kit (ADK)
-- LLM: Gemini 2.5 Pro (orchestration), Gemini 2.5 Flash (specialized tasks)
+- Framework: Custom
+- LLM: Groq (Llama 3)
 - Memory: Agent Engine Memory Bank
-- Deployment: Google Cloud Platform with Terraform
-- Monitoring: Cloud Trace, Cloud Logging, Cloud Monitoring
 
 ## 📊 Success Metrics (Industry-Verified Benchmarks)
 

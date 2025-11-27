@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Python 3.12+**
-- **Google AI API Key** (free from https://aistudio.google.com/app/apikey)
+- **Groq API Key** (free from https://console.groq.com/)
 - **uv** package manager (recommended) or pip
 
 ## 📦 Installation
@@ -32,33 +32,39 @@ pip install -e .
 # Copy the example environment file
 cp .env.example .env
 
-# Edit .env and add your Google AI API key
+# Edit .env and add your Groq API key
 vim .env  # or use your preferred editor
 ```
 
 **Required configuration in `.env`:**
 ```
-GOOGLE_API_KEY=your_api_key_here
+AI_PROVIDER=groq
+GROQ_API_KEY=gsk_your_key_here
 ```
 
-Get your free API key from: https://aistudio.google.com/app/apikey
+Get your free API key from: https://console.groq.com/
 
 ## 🎮 Running the Application
 
-### Option 1: Standalone Demo (Command Line)
+### Option 1: Quick Start Script (Recommended)
 
-Run a simple demonstration scenario:
+**For Linux/Mac/WSL:**
 ```bash
-python main.py
+./scripts/start.sh
 ```
 
-This will:
-- Initialize all agents
-- Run a sample phishing scenario
-- Display the conversation and evaluation results
-- Show score and learning feedback
+**For Windows (PowerShell):**
+```powershell
+.\scripts\start.ps1
+```
 
-### Option 2: Full Web Application (Recommended)
+This will automatically:
+- Check your environment configuration
+- Start both API and UI servers
+- Open the application in your browser
+- Create logs in `logs/api.log` and `logs/ui.log`
+
+### Option 2: Full Web Application (Manual)
 
 **Step 1: Start the API Server**
 ```bash
@@ -76,17 +82,18 @@ streamlit run ui.py
 
 The UI will open automatically in your browser at: http://localhost:8501
 
-### Option 3: Quick Start Script
+### Option 3: Standalone Demo (Command Line)
 
-For convenience, use the startup script:
+Run a simple demonstration scenario:
 ```bash
-./start.sh
+python main.py
 ```
 
-This will automatically:
-- Check your environment configuration
-- Start both API and UI servers
-- Open the application in your browser
+This will:
+- Initialize all agents
+- Run a sample phishing scenario
+- Display the conversation and evaluation results
+- Show score and learning feedback
 
 ## 🎯 Using the Training Interface
 
@@ -227,9 +234,9 @@ lsof -ti:8000 | xargs kill -9
 
 ### Missing API Key Error
 
-**Problem:** `GOOGLE_API_KEY` not found
+**Problem:** `GROQ_API_KEY` not found
 - Ensure `.env` file exists in project root
-- Verify `GOOGLE_API_KEY=your_key` is set
+- Verify `GROQ_API_KEY=gsk_your_key` is set
 - Restart the API server after updating `.env`
 
 ### Import Errors
@@ -267,7 +274,7 @@ MIT License - See [LICENSE](LICENSE) for details
 
 **Built with:**
 - 🤖 Google Agent Development Kit (ADK)
-- 🧠 Gemini 2.5 Pro & Flash
+- 🧠 Groq (Llama 3.3 70B & 3.1 8B)
 - ⚡ FastAPI & Streamlit
 - 🐍 Python 3.12+
 

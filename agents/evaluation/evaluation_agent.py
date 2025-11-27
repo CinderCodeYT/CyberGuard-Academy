@@ -292,6 +292,21 @@ class EvaluationAgent(BaseAgent):
             elif message.message_type == "request_difficulty":
                 response_payload = await self._handle_difficulty_request(message.payload)
                 response_type = "difficulty_recommendation"
+
+            elif message.message_type == "session_started":
+                # Just acknowledge, maybe reset internal state for this session if needed
+                response_payload = {"status": "acknowledged"}
+                response_type = "session_started_ack"
+
+            elif message.message_type == "decision_made":
+                # Map decision_made to track_decision logic
+                response_payload = await self._handle_track_decision(message.payload)
+                response_type = "decision_tracked"
+
+            elif message.message_type == "get_evaluation":
+                # Map get_evaluation to evaluate_session logic
+                response_payload = await self._handle_evaluate_session(message.payload)
+                response_type = "evaluation_data"
                 
             else:
                 logger.warning(f"[{self.agent_name}] Unknown message type: {message.message_type}")
@@ -336,13 +351,18 @@ class EvaluationAgent(BaseAgent):
     async def _handle_evaluate_session(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Handle session evaluation request."""
         session_data = payload.get("session")
-        
-        # Reconstruct session object
-        session = CyberGuardSession(**session_data)
-        
-        evaluation = await self.calculate_session_score(session)
-        
-        return evaluation
+        if not session_data:
+            logger.error(f"[{self.agent_name}] Missing session data in payload. Keys: {list(payload.keys())}")
+            return {"error": "Missing session data"}
+            
+        try:
+            # Reconstruct session object
+            session = CyberGuardSession(**session_data)
+            evaluation = await self.calculate_session_score(session)
+            return evaluation
+        except Exception as e:
+            logger.error(f"[{self.agent_name}] Failed to reconstruct session: {e}")
+            return {"error": str(e)}
     
     async def _handle_risk_assessment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Handle risk assessment request."""

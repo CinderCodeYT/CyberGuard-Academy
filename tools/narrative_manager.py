@@ -14,10 +14,11 @@ Key principle: Never break immersion by revealing the training nature.
 from typing import Dict, Any, Optional
 from datetime import datetime
 import random
+import re
 
 from cyberguard.models import CyberGuardSession, UserRole, ThreatType
 from cyberguard.config import settings
-from cyberguard.gemini_client import GeminiClient
+from cyberguard.groq_client import GroqClient
 
 
 class NarrativeManager:
@@ -52,9 +53,14 @@ class NarrativeManager:
     async def generate_opening(
         self,
         scenario_details: Dict[str, Any],
-        user_context: Any
+        user_context: Any,
+        threat_content: Optional[Dict[str, Any]] = None
     ) -> str:
-        """Generate engaging opening narrative for scenario using Gemini AI."""
+        """Generate engaging opening narrative for scenario using Gemini AI.
+        
+        If threat_content is provided, the opening will include the complete threat
+        presentation (e.g., the phishing email). Otherwise, it just sets the scene.
+        """
         
         scenario_type = scenario_details.get("id", "generic")
         user_role = user_context.user_role if hasattr(user_context, 'user_role') else UserRole.GENERAL
@@ -73,7 +79,30 @@ GUIDELINES:
 
 Goal: Create an engaging training exercise opening."""
         
-        prompt = f"""Generate an opening narrative for a cybersecurity training scenario.
+        # Build prompt based on whether we have threat content
+        if threat_content:
+            # Include the threat in the opening narrative
+            prompt = f"""Generate a complete opening narrative for a cybersecurity training scenario that includes the threat.
+
+User Role: {user_role.value}
+Scenario Type: {scenario_type}
+Scenario Description: {scenario_details.get('description', 'A typical workday')}
+Current Time: {self._get_time_context()}
+
+THREAT DETAILS TO INCLUDE:
+{self._format_threat_content(threat_content)}
+
+Create an immersive opening (3-4 paragraphs) that:
+1. Establishes the user's role and current work context
+2. Naturally leads into encountering the threat (email, call, etc.)
+3. Presents the complete threat content in a realistic way
+4. Does NOT reveal this is training or mention any "scenario"
+5. Ends by asking what the user wants to do next
+
+Write in second person ("You arrive at...") to increase immersion."""
+        else:
+            # Just scene-setting without threat
+            prompt = f"""Generate an opening narrative for a cybersecurity training scenario.
 
 User Role: {user_role.value}
 Scenario Type: {scenario_type}
@@ -89,8 +118,8 @@ Create a brief, immersive opening (2-3 paragraphs) that:
 Write in second person ("You arrive at...") to increase immersion."""
         
         try:
-            # Use Gemini Pro for complex narrative generation
-            narrative = await GeminiClient.generate_text(
+            # Use Groq Pro for complex narrative generation
+            narrative = await GroqClient.generate_text(
                 prompt=prompt,
                 model_type="pro",
                 temperature=0.8,  # Higher creativity for engaging narratives
@@ -101,7 +130,7 @@ Write in second person ("You arrive at...") to increase immersion."""
             return narrative.strip()
             
         except Exception as e:
-            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            print(f"[NarrativeManager] Groq generation failed: {e}, using template")
             # Fallback to template
             return self._generate_opening_fallback(scenario_type, user_role, scenario_details)
 
@@ -111,7 +140,7 @@ Write in second person ("You arrive at...") to increase immersion."""
         user_context: str,
         session: CyberGuardSession
     ) -> str:
-        """Generate narrative that naturally presents the threat using Gemini AI."""
+        """Generate narrative that naturally presents the threat using Groq AI."""
         
         threat_type = session.scenario_type
         
@@ -136,8 +165,8 @@ Present the threat as something that just happened in their workday."""
             prompt = self._build_generic_presentation_prompt(threat_content, user_context, session)
         
         try:
-            # Use Gemini Pro for narrative presentation
-            narrative = await GeminiClient.generate_text(
+            # Use Groq Pro for narrative presentation
+            narrative = await GroqClient.generate_text(
                 prompt=prompt,
                 model_type="pro",
                 temperature=0.7,
@@ -148,7 +177,7 @@ Present the threat as something that just happened in their workday."""
             return narrative.strip()
             
         except Exception as e:
-            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            print(f"[NarrativeManager] Groq generation failed: {e}, using template")
             # Fallback to template-based presentation
             if threat_type == ThreatType.PHISHING:
                 return self._present_phishing_threat(threat_content, user_context, session)
@@ -183,21 +212,24 @@ Present the threat as something that just happened in their workday."""
         
         # Detect security-related keywords and actions
         security_actions = {
-            "verify": ["verify", "check", "confirm", "validate", "call", "contact", "ask", "inquire", "sender"],
+            "verify": ["verify", "check", "confirm", "validate", "call", "contact", "sender"],
             "report": ["report", "forward", "escalate", "notify", "alert", "flag"],
             "ignore": ["ignore", "delete", "discard", "skip", "trash"],
             "click": ["click", "open", "download", "access", "view", "link"],
-            "respond": ["reply", "respond", "answer", "send", "email back"]
+            "respond": ["reply", "respond", "answer", "send", "email back"],
+            "inquiry": ["ask", "inquire", "question", "who", "what", "where", "when", "why", "how", "?"]
         }
         
         detected_action = "unclear"
         for action, keywords in security_actions.items():
-            if any(keyword in user_lower for keyword in keywords):
+            # Use regex for whole word matching to avoid false positives (e.g. "task" matching "ask")
+            # We look for the keyword at the start of a word boundary
+            if any(re.search(r'\b' + re.escape(keyword), user_lower) for keyword in keywords):
                 detected_action = action
                 break
         
         analysis["user_action"] = detected_action
-        analysis["is_decision_point"] = detected_action != "unclear"
+        analysis["is_decision_point"] = detected_action != "unclear" and detected_action != "inquiry"
         analysis["is_security_decision"] = detected_action in ["verify", "report", "ignore", "click"]
         
         # Determine decision quality and risk based on scenario context
@@ -210,7 +242,16 @@ Present the threat as something that just happened in their workday."""
         
         # Check if scenario should end
         resolution_indicators = ["done", "finished", "complete", "end"]
-        analysis["scenario_resolved"] = any(indicator in user_lower for indicator in resolution_indicators)
+        # Use regex for whole word matching to avoid false positives (e.g. "send" matching "end")
+        matched_indicator = None
+        for indicator in resolution_indicators:
+            if re.search(r'\b' + re.escape(indicator) + r'\b', user_lower):
+                matched_indicator = indicator
+                break
+        
+        analysis["scenario_resolved"] = matched_indicator is not None
+        if analysis["scenario_resolved"]:
+            logger.info(f"[NarrativeManager] Scenario resolution triggered by keyword: '{matched_indicator}' in input: '{user_input}'")
         
         return analysis
 
@@ -255,7 +296,8 @@ Present the threat as something that just happened in their workday."""
         self,
         user_action: str,
         session_context: CyberGuardSession,
-        decision_quality: str
+        decision_quality: str,
+        user_input: str = ""
     ) -> str:
         """Generate contextual response based on user action using Gemini AI."""
         
@@ -268,8 +310,9 @@ CRITICAL RULES:
 4. Keep responses brief (1-2 paragraphs)
 5. Don't lecture - guide through natural conversation
 6. Use appropriate tone based on decision quality
+7. If the user asks a question, ANSWER IT directly in character. Do not dismiss it.
 
-Your goal: Acknowledge their action and naturally guide the scenario forward."""
+Your goal: Acknowledge their action/question and naturally guide the scenario forward."""
         
         # Build conversation context (last 6 turns to include threat presentation)
         conversation_context = ""
@@ -282,18 +325,28 @@ Your goal: Acknowledge their action and naturally guide the scenario forward."""
                 # Limit each message to 300 chars to avoid token bloat
                 conversation_context += f"{role.upper()}: {content[:300]}\n"
         
-        prompt = f"""The user just took this action: {user_action}
+        # Include threat content in context to prevent hallucinations
+        threat_context = ""
+        if session_context.threat_content:
+            threat_context = f"\nORIGINAL THREAT DETAILS:\n{self._format_threat_content(session_context.threat_content)}\n"
+
+        prompt = f"""The user just said: "{user_input}"
+Classified action: {user_action}
 Decision quality: {decision_quality}
 Scenario type: {session_context.scenario_type.value if session_context.scenario_type else 'unknown'}
 Current phase: {session_context.current_phase}
 
+{threat_context}
 {conversation_context}
 
 Generate a brief, natural response that:
-1. Acknowledges what they just did
-2. Reflects the quality of their decision (excellent/good/poor/acceptable)
-3. Moves the scenario forward naturally (e.g., if they asked to "check sender", show the sender info)
-4. Stays in character as their immersive work environment
+1. Continues the dialogue naturally. If the user asked a question, ANSWER IT directly in character.
+2. Do NOT re-narrate actions the user just took (e.g. don't say "You ask John..."). Just give the response or result.
+3. If the user is talking to someone (e.g. IT support), speak AS that person or describe their immediate reply.
+4. Reflect the quality of their decision if it was a security action.
+5. Moves the scenario forward naturally.
+6. Stays in character as their immersive work environment.
+7. CRITICAL: If referencing the threat (email/call), use the EXACT details from ORIGINAL THREAT DETAILS above. Do not invent new details.
 
 Keep it conversational and brief (1-2 short paragraphs)."""
         
@@ -302,7 +355,7 @@ Keep it conversational and brief (1-2 short paragraphs)."""
         print(f"[NarrativeManager DEBUG] Prompt: {prompt[:200]}...")
         
         try:
-            response = await GeminiClient.generate_text(
+            response = await GroqClient.generate_text(
                 prompt=prompt,
                 model_type="flash",  # Use Flash for quick responses
                 temperature=0.6,
@@ -315,7 +368,7 @@ Keep it conversational and brief (1-2 short paragraphs)."""
             return response.strip()
             
         except Exception as e:
-            print(f"[NarrativeManager] Gemini generation failed: {e}, using template")
+            print(f"[NarrativeManager] Groq generation failed: {e}, using template")
             # Fallback to template responses
             return self._generate_adaptive_response_fallback(decision_quality)
 
@@ -672,6 +725,40 @@ End-of-quarter deadlines are approaching fast...
         }
         
         return contexts.get(user_role, contexts[UserRole.GENERAL])
+
+    def _format_threat_content(self, threat_content: Dict[str, Any]) -> str:
+        """Format threat content for inclusion in narrative prompts."""
+        
+        if not threat_content:
+            return "No specific threat details provided"
+        
+        formatted = []
+        
+        # Format email-based threats (phishing, BEC)
+        if "email" in threat_content:
+            email = threat_content["email"]
+            formatted.append(f"Email Sender: {email.get('sender', 'Unknown')}")
+            formatted.append(f"Email Subject: {email.get('subject', 'No Subject')}")
+            formatted.append(f"Email Body:\n{email.get('body', 'No content')}")
+            
+            if "sender_display_name" in email:
+                formatted.append(f"Display Name: {email.get('sender_display_name')}")
+            
+            if "links" in email and email["links"]:
+                formatted.append(f"Links: {', '.join(email['links'])}")
+        
+        # Format phone call-based threats (vishing)
+        elif "caller_id" in threat_content:
+            formatted.append(f"Caller: {threat_content.get('caller_id', 'Unknown')}")
+            formatted.append(f"Message: {threat_content.get('message', 'No message')}")
+        
+        # Generic format for other threats
+        else:
+            for key, value in threat_content.items():
+                if isinstance(value, (str, int, float)):
+                    formatted.append(f"{key.replace('_', ' ').title()}: {value}")
+        
+        return "\n".join(formatted)
 
     def _get_time_context(self) -> str:
         """Get appropriate time context for narrative."""

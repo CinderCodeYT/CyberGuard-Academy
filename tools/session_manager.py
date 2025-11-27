@@ -51,12 +51,12 @@ class SessionManager:
             # Create storage directory
             self.storage_path.mkdir(parents=True, exist_ok=True)
             
-            # Load active session registry
-            await self._load_active_sessions_registry()
+            # Reset active sessions registry on startup
+            # Since we don't support session resumption yet, we start fresh
+            self.active_sessions = {}
+            await self._save_active_sessions_registry()
             
-            # Skip expensive cleanup on startup - will happen on first session access
-            # This prevents 2+ minute startup times with many sessions on disk
-            logger.info(f"[SessionManager] Loaded {len(self.active_sessions)} active sessions (cleanup deferred)")
+            logger.info("[SessionManager] Reset active sessions registry on startup")
             
             logger.info("[SessionManager] Session manager initialized")
             

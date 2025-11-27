@@ -21,7 +21,7 @@ from cyberguard.models import (
     UserRole,
     CyberGuardSession,
 )
-from cyberguard.gemini_client import GeminiClient
+from cyberguard.groq_client import GroqClient
 
 class EmailGenerator:
     """
@@ -75,8 +75,8 @@ class EmailGenerator:
         prompt = self._build_email_prompt(threat_pattern, user_role, difficulty_level, session_context)
         
         try:
-            # Use Gemini Flash for high-volume email generation (cost-effective)
-            response = await GeminiClient.generate_text(
+            # Use Groq Flash for high-volume email generation (cost-effective)
+            response = await GroqClient.generate_text(
                 prompt=prompt,
                 model_type="flash",
                 temperature=0.7,  # Moderate creativity for variation
@@ -94,8 +94,8 @@ class EmailGenerator:
             return email_content
             
         except Exception as e:
-            print(f"[EmailGenerator] Gemini generation failed: {e}, falling back to template")
-            # Fallback to template-based generation if Gemini fails
+            print(f"[EmailGenerator] Groq generation failed: {e}, falling back to template")
+            # Fallback to template-based generation if Groq fails
             return self._generate_fallback_email(threat_pattern, user_role, difficulty_level, session_context)
     
     def _build_email_generation_instruction(
@@ -290,14 +290,14 @@ The email should use the {threat_pattern.value} pattern at {difficulty_level.val
                     "difficulty": difficulty_level.value,
                     "target_role": user_role.value,
                     "educational_focus": parsed.get("learning_objectives", []),
-                    "generated_by": "gemini"
+                    "generated_by": "groq"
                 }
             }
             
             return email_content
             
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"[EmailGenerator] Failed to parse Gemini response: {e}")
+            print(f"[EmailGenerator] Failed to parse Groq response: {e}")
             print(f"[EmailGenerator] Raw response: {response[:200]}")
             raise
     
