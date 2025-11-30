@@ -297,7 +297,7 @@ class CyberGuardOrchestrator:
         )
         
         evaluation_response = await self.evaluation_agent.process_message(evaluation_message)
-        evaluation_data = evaluation_response.payload.get("evaluation", {})
+        evaluation_data = evaluation_response.payload
         
         # Update user profile with evaluation results
         await self._update_user_profile(session, evaluation_data)
@@ -378,10 +378,13 @@ class CyberGuardOrchestrator:
                 recipient_agent="evaluation_agent",
                 message_type="get_evaluation",
                 session_id=session.session_id,
-                payload={"session_id": session.session_id}
+                payload={
+                    "session": session.model_dump(mode='json'),
+                    "session_id": session.session_id
+                }
             )
             eval_response = await self.evaluation_agent.process_message(eval_message)
-            evaluation_data = eval_response.payload.get("evaluation", {})
+            evaluation_data = eval_response.payload
         
         # Generate debrief
         debrief = await self.game_master.debrief_generator.generate_debrief(

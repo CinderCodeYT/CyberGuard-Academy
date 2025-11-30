@@ -24,7 +24,7 @@ def cleanup_sessions():
     active_sessions_file = sessions_dir / "active_sessions.json"
     if active_sessions_file.exists():
         try:
-            with open(active_sessions_file, 'w') as f:
+            with open(active_sessions_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f, indent=2)
             print("✅ Cleared active_sessions registry")
         except Exception as e:
@@ -35,7 +35,7 @@ def cleanup_sessions():
             continue
             
         try:
-            with open(session_file, 'r') as f:
+            with open(session_file, 'r', encoding='utf-8') as f:
                 session_data = json.load(f)
             
             # Check if is_active field exists
@@ -44,7 +44,7 @@ def cleanup_sessions():
                 session_data["is_active"] = False
                 
                 # Save back to file
-                with open(session_file, 'w') as f:
+                with open(session_file, 'w', encoding='utf-8') as f:
                     json.dump(session_data, f, indent=2)
                 
                 updated_count += 1

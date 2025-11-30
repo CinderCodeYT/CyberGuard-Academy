@@ -109,6 +109,7 @@ class CyberGuardSession(BaseModel):
     decision_points: List[DecisionPoint] = Field(default_factory=list, description="Key user decisions for evaluation")
     threat_actor_active: Optional[str] = Field(None, description="Which threat agent is currently engaged")
     threat_content: Optional[Dict[str, Any]] = Field(None, description="Details of the generated threat (email, call, etc.)")
+    evaluation: Optional[Dict[str, Any]] = Field(None, description="Final evaluation results")
     
     # Timing and engagement
     start_time: float = Field(default_factory=time.time, description="When scenario started")

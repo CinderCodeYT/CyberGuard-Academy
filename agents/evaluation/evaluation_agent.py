@@ -193,6 +193,22 @@ class EvaluationAgent(BaseAgent):
             session_metrics = self.evaluation_metrics.get(session.session_id, {})
             decisions = session_metrics.get("decisions", [])
             
+            # Fallback: If no internal decisions, try to reconstruct from session object
+            # This handles cases where agent was restarted or we're evaluating a loaded session
+            if not decisions and session.decision_points:
+                logger.info(f"[{self.agent_name}] Internal metrics empty, reconstructing from {len(session.decision_points)} session decisions")
+                decisions = []
+                for dp in session.decision_points:
+                    # Re-evaluate to get risk impact and outcome
+                    # Note: We might miss exact response time if not stored in context, 
+                    # but we can infer or use defaults
+                    evaluation = await self._evaluate_decision(dp, {"response_time": 30.0}) # Default to optimal time
+                    
+                    decisions.append({
+                        "decision_point": dp.dict(),
+                        "evaluation": evaluation
+                    })
+            
             if not decisions:
                 logger.warning(f"[{self.agent_name}] No decisions tracked for session")
                 return self._generate_empty_evaluation()
@@ -215,13 +231,25 @@ class EvaluationAgent(BaseAgent):
             risk_score = 1.0 - overall_score
             
             # Analyze patterns and gaps
-            vulnerability_analysis = await self._analyze_vulnerability_patterns(decisions)
-            knowledge_gaps = await self._identify_knowledge_gaps(decisions, vulnerability_analysis)
+            vulnerability_stats = await self._analyze_vulnerability_patterns(decisions)
+            knowledge_gaps = await self._identify_knowledge_gaps(decisions, vulnerability_stats)
             
+            # Transform vulnerability stats into list for UI/API
+            vulnerability_analysis_list = []
+            for vuln_type, stats in vulnerability_stats["by_type"].items():
+                info = self._get_vulnerability_info(vuln_type)
+                vulnerability_analysis_list.append({
+                    "pattern": vuln_type,
+                    "severity": info["severity"],
+                    "description": info["description"],
+                    "recommendation": info["recommendation"],
+                    "stats": stats
+                })
+
             # Generate recommendations
             recommendations = await self._generate_recommendations(
                 risk_score,
-                vulnerability_analysis,
+                vulnerability_stats,
                 knowledge_gaps
             )
             
@@ -243,7 +271,7 @@ class EvaluationAgent(BaseAgent):
                 },
                 "decisions_tracked": len(decisions),
                 "correct_decisions": sum(1 for d in decisions if d["evaluation"]["outcome"] == "correct"),
-                "vulnerability_analysis": vulnerability_analysis,
+                "vulnerability_analysis": vulnerability_analysis_list,
                 "knowledge_gaps": knowledge_gaps,
                 "recommendations": recommendations,
                 "difficulty_recommendation": difficulty_recommendation,
@@ -356,7 +384,7 @@ class EvaluationAgent(BaseAgent):
             return {"error": "Missing session data"}
             
         try:
-            # Reconstruct session object
+            # Reconstruct session object from payload
             session = CyberGuardSession(**session_data)
             evaluation = await self.calculate_session_score(session)
             return evaluation
@@ -436,8 +464,9 @@ class EvaluationAgent(BaseAgent):
         Returns:
             Evaluation dictionary with outcome, risk_impact, and analysis
         """
-        # Determine if decision was correct
-        is_correct = decision.user_choice.lower() == decision.correct_choice.lower()
+        # Determine if decision was correct based on risk impact
+        # Negative or zero risk impact means the action was safe/correct
+        is_correct = decision.risk_score_impact <= 0
         
         # Get response time
         response_time = context.get("response_time", 30.0)
@@ -650,28 +679,62 @@ class EvaluationAgent(BaseAgent):
         session: CyberGuardSession
     ) -> Dict[str, Any]:
         """Recommend difficulty adjustment for next session."""
-        current_difficulty = session.current_difficulty
+        current_diff = session.current_difficulty.value
         
-        # Target 70% success rate (0.7 overall score)
-        if overall_score > 0.85:  # >85% - too easy
-            recommended = min(current_difficulty.value + 1, 5)
-            adjustment = "increase"
-            reason = "User consistently exceeding expectations"
-        elif overall_score < 0.55:  # <55% - too hard
-            recommended = max(current_difficulty.value - 1, 1)
-            adjustment = "decrease"
-            reason = "User struggling with current difficulty"
+        if overall_score >= 0.85:
+            recommended = min(current_diff + 1, 5)
+            reason = "Excellent performance, ready for next level"
+        elif overall_score < 0.60:
+            recommended = max(current_diff - 1, 1)
+            reason = "Struggling with current concepts, recommended review"
         else:
-            recommended = current_difficulty.value
-            adjustment = "maintain"
-            reason = "Optimal challenge level achieved"
-        
+            recommended = current_diff
+            reason = "Appropriate challenge level"
+            
         return {
-            "current": current_difficulty.value,
+            "current": current_diff,
             "recommended": recommended,
-            "adjustment": adjustment,
             "reason": reason
         }
+
+    def _get_vulnerability_info(self, vuln_type: str) -> Dict[str, str]:
+        """Get descriptive info for a vulnerability type."""
+        # Normalize type
+        vuln_key = vuln_type.lower().replace(" ", "_")
+        
+        info_map = {
+            "phishing_email": {
+                "severity": "High",
+                "description": "Deceptive emails designed to trick users into revealing sensitive information or clicking malicious links.",
+                "recommendation": "Verify sender identity and check for urgency or mismatched domains."
+            },
+            "urgency": {
+                "severity": "Medium",
+                "description": "Psychological pressure to act quickly without thinking.",
+                "recommendation": "Pause and verify whenever a message demands immediate action."
+            },
+            "authority": {
+                "severity": "Medium",
+                "description": "Impersonation of executives or IT staff to compel compliance.",
+                "recommendation": "Verify requests from authority figures through a secondary channel."
+            },
+            "link_manipulation": {
+                "severity": "High",
+                "description": "Obfuscated or misleading URLs leading to malicious sites.",
+                "recommendation": "Hover over links to preview the actual destination before clicking."
+            },
+            "credential_harvesting": {
+                "severity": "Critical",
+                "description": "Attempts to steal login credentials via fake login pages.",
+                "recommendation": "Never enter credentials on sites reached via email links."
+            }
+        }
+        
+        return info_map.get(vuln_key, {
+            "severity": "Unknown",
+            "description": f"Security vulnerability related to {vuln_type}.",
+            "recommendation": "Follow standard security best practices."
+        })
     
     # ==================== Utility Methods ====================
     

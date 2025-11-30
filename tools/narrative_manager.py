@@ -228,9 +228,23 @@ Present the threat as something that just happened in their workday."""
                 detected_action = action
                 break
         
+        # Fallback to LLM classification if regex fails but input is substantial
+        if detected_action == "unclear" and len(user_input.split()) > 2:
+            try:
+                print(f"[NarrativeManager] Regex failed to classify action, attempting LLM classification for: '{user_input}'")
+                detected_action = await self._classify_action_with_llm(user_input, session_context)
+                print(f"[NarrativeManager] LLM classified action as: {detected_action}")
+            except Exception as e:
+                print(f"[NarrativeManager] LLM classification failed: {e}")
+        
         analysis["user_action"] = detected_action
         analysis["is_decision_point"] = detected_action != "unclear" and detected_action != "inquiry"
-        analysis["is_security_decision"] = detected_action in ["verify", "report", "ignore", "click"]
+        # Verify is an investigative action, not a final resolution. Only final actions trigger completion.
+        analysis["is_security_decision"] = detected_action in ["report", "ignore", "click"]
+        
+        # Import logger if not available in scope (it should be at module level but let's be safe or check imports)
+        from loguru import logger
+        logger.info(f"[NarrativeManager DEBUG] Input: '{user_input}' -> Action: '{detected_action}', Security Decision: {analysis['is_security_decision']}")
         
         # Determine decision quality and risk based on scenario context
         if session_context.scenario_type == ThreatType.PHISHING:
@@ -254,6 +268,36 @@ Present the threat as something that just happened in their workday."""
             logger.info(f"[NarrativeManager] Scenario resolution triggered by keyword: '{matched_indicator}' in input: '{user_input}'")
         
         return analysis
+
+    async def _classify_action_with_llm(self, user_input: str, session_context: CyberGuardSession) -> str:
+        """Classify user action using LLM when regex fails."""
+        
+        system_instruction = """You are a classifier for user actions in a cybersecurity training scenario.
+        
+        Classify the user's input into one of these categories:
+        - verify: Checking sender, calling to confirm, asking for proof
+        - report: Forwarding to IT, flagging as phishing, reporting to security
+        - ignore: Deleting email, ignoring message, doing nothing
+        - click: Clicking link, opening attachment, downloading file, replying with info
+        - inquiry: Asking for clarification, asking who sent it
+        - unclear: None of the above
+        
+        Return ONLY the category name."""
+        
+        prompt = f"""User input: "{user_input}"
+        Scenario type: {session_context.scenario_type.value}
+        
+        Classification:"""
+        
+        response = await GroqClient.generate_text(
+            prompt=prompt,
+            model_type="flash",
+            temperature=0.1,
+            max_tokens=10,
+            system_instruction=system_instruction
+        )
+        
+        return response.strip().lower()
 
     def _analyze_phishing_response(self, action: str, full_input: str) -> Dict[str, Any]:
         """Analyze user response to phishing scenario."""
@@ -288,6 +332,12 @@ Present the threat as something that just happened in their workday."""
                 "decision_quality": "acceptable",
                 "risk_impact": 0.1,
                 "explanation": "Ignoring is safe but doesn't help prevent future attacks"
+            })
+        elif action == "respond":
+            results.update({
+                "decision_quality": "poor",
+                "risk_impact": 0.6,
+                "explanation": "Engaging with phishing emails confirms your address and encourages more attacks"
             })
         
         return results

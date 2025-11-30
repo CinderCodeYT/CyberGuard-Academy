@@ -210,6 +210,7 @@ __marimo__/
 # CyberGuard Academy Runtime Data
 # Session files contain user conversations and training data - should not be committed
 data/sessions/*.json
+data/sessions/*.tmp
 data/sessions/active_sessions.json
 
 # Keep directory structure but ignore content

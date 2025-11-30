@@ -13,6 +13,7 @@ import uvicorn
 from cyberguard.orchestrator import CyberGuardOrchestrator
 
 # Module-level orchestrator instance
+# Force reload trigger
 _orchestrator: Optional[CyberGuardOrchestrator] = None
 
 

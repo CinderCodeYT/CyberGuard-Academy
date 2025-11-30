@@ -92,6 +92,7 @@ class SessionManager:
         try:
             # Generate file path
             session_file = self.storage_path / f"{session.session_id}.json"
+            temp_file = self.storage_path / f"{session.session_id}.tmp"
             
             # Convert session to dict for JSON serialization
             session_data = {
@@ -113,9 +114,14 @@ class SessionManager:
                 "updated_at": session.updated_at.isoformat()
             }
             
-            # Write to file
-            with open(session_file, 'w') as f:
+            # Write to temp file first (atomic write pattern)
+            with open(temp_file, 'w', encoding='utf-8') as f:
                 json.dump(session_data, f, indent=2, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())  # Ensure data is written to disk
+            
+            # Rename temp file to actual file (atomic operation on POSIX and modern Windows)
+            temp_file.replace(session_file)
             
             # Update active sessions registry
             if session.end_time is None:  # Session is active if not ended
@@ -150,7 +156,7 @@ class SessionManager:
                 return None
             
             # Load session data
-            with open(session_file, 'r') as f:
+            with open(session_file, 'r', encoding='utf-8') as f:
                 session_data = json.load(f)
             
             # Convert back to CyberGuardSession object
@@ -238,7 +244,7 @@ class SessionManager:
             # Check all session files
             for session_file in self.storage_path.glob("*.json"):
                 try:
-                    with open(session_file, 'r') as f:
+                    with open(session_file, 'r', encoding='utf-8') as f:
                         session_data = json.load(f)
                     
                     updated_at = session_data.get("updated_at")
@@ -288,7 +294,7 @@ class SessionManager:
             # Check all session files
             for session_file in self.storage_path.glob("*.json"):
                 try:
-                    with open(session_file, 'r') as f:
+                    with open(session_file, 'r', encoding='utf-8') as f:
                         session_data = json.load(f)
                     
                     if session_data.get("user_id") == user_id:
@@ -322,7 +328,7 @@ class SessionManager:
                     total_sessions += 1
                     total_size += session_file.stat().st_size
                     
-                    with open(session_file, 'r') as f:
+                    with open(session_file, 'r', encoding='utf-8') as f:
                         session_data = json.load(f)
                     
                     if session_data.get("is_active", False):
@@ -352,7 +358,7 @@ class SessionManager:
             registry_file = self.storage_path / "active_sessions.json"
             
             if registry_file.exists():
-                with open(registry_file, 'r') as f:
+                with open(registry_file, 'r', encoding='utf-8') as f:
                     self.active_sessions = json.load(f)
                 
                 logger.debug(f"[SessionManager] Loaded {len(self.active_sessions)} active sessions from registry")
@@ -366,7 +372,7 @@ class SessionManager:
         try:
             registry_file = self.storage_path / "active_sessions.json"
             
-            with open(registry_file, 'w') as f:
+            with open(registry_file, 'w', encoding='utf-8') as f:
                 json.dump(self.active_sessions, f, indent=2)
             
             logger.debug(f"[SessionManager] Saved {len(self.active_sessions)} active sessions to registry")

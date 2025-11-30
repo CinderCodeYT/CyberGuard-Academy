@@ -306,6 +306,8 @@ class GameMasterAgent(OrchestratorAgent):
             response = await self._handle_active_scenario_response(session, user_input, decision_analysis)
         elif session.current_state == "awaiting_decision":
             response = await self._handle_decision_response(session, user_input, decision_analysis)
+        elif session.current_state == "scenario_resolution":
+            response = await self._handle_resolution_response(session, user_input)
         else:
             response = await self._handle_general_response(session, user_input)
         
@@ -382,6 +384,35 @@ class GameMasterAgent(OrchestratorAgent):
     ) -> Dict[str, Any]:
         """Handle user response during active threat scenario."""
         
+        from loguru import logger
+        logger.info(f"[{self.agent_name} DEBUG] _handle_active_scenario_response called")
+        logger.info(f"[{self.agent_name} DEBUG] decision_analysis: {decision_analysis}")
+
+        # Check if user made a decisive security action (verify, report, click, ignore)
+        # This triggers the end of the scenario
+        if decision_analysis.get("is_security_decision", False):
+            print(f"[{self.agent_name}] Security decision detected: {decision_analysis.get('user_action')}")
+            
+            # Generate learning moment based on decision quality
+            learning_content = await self.narrative_manager.generate_learning_moment(
+                user_decision=decision_analysis.get("user_action", "unknown"),
+                optimal_action=decision_analysis.get("optimal_action", "unknown"),
+                vulnerability_type=decision_analysis.get("vulnerability_type", "unknown"),
+                session_context=session
+            )
+            
+            # Transition to resolution state instead of completing immediately
+            session.current_state = "scenario_resolution"
+            
+            # Add guidance for next step
+            learning_content += "\n\n(Type 'continue' to see your results)"
+            
+            return {
+                "content": learning_content,
+                "session_state": session.current_state,
+                "scenario_complete": False 
+            }
+
         # Check if user needs a hint
         if decision_analysis.get("user_struggling", False) and session.hints_used < 3:
             hint = await self.hint_provider.generate_hint(
@@ -462,6 +493,22 @@ class GameMasterAgent(OrchestratorAgent):
                 "requires_decision": True
             }
 
+    async def _handle_resolution_response(
+        self, 
+        session: CyberGuardSession, 
+        user_input: str
+    ) -> Dict[str, Any]:
+        """Handle user response during scenario resolution (post-decision)."""
+        
+        # Any input triggers completion now
+        session.current_state = "scenario_complete"
+        
+        return {
+            "content": "Wrapping up scenario...",
+            "session_state": session.current_state,
+            "scenario_complete": True
+        }
+
     async def _handle_general_response(
         self, 
         session: CyberGuardSession, 
@@ -510,6 +557,9 @@ class GameMasterAgent(OrchestratorAgent):
                 "completion_reason": reason
             }
         )
+        
+        # Store evaluation in session
+        session.evaluation = evaluation_response
         
         # Store session in memory
         await self.coordinate_with_agent(

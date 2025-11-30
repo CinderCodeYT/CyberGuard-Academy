@@ -147,7 +147,7 @@ with st.sidebar:
     
     threat_type = st.selectbox(
         "Threat Type",
-        options=["phishing", "vishing", "bec", "physical", "insider"],
+        options=["phishing", "vishing (Not implemented)", "bec (Not implemented)", "physical (Not implemented)", "insider (Not implemented)"],
         help="Type of cybersecurity threat to practice"
     )
     
@@ -271,7 +271,12 @@ if st.session_state.scenario_active and not st.session_state.evaluation_data:
             
             # Check if scenario is complete
             if response.get("scenario_complete", False):
-                st.session_state.evaluation_data = response.get("debrief")
+                debrief = response.get("debrief", {})
+                # Extract evaluation data if nested
+                if debrief and "evaluation" in debrief:
+                    st.session_state.evaluation_data = debrief["evaluation"]
+                else:
+                    st.session_state.evaluation_data = debrief
                 st.balloons()
             
             st.rerun()
@@ -296,7 +301,11 @@ if st.session_state.scenario_active and not st.session_state.evaluation_data:
                         "content": response["narrative"]
                     })
                     if response.get("scenario_complete", False):
-                        st.session_state.evaluation_data = response.get("debrief")
+                        debrief = response.get("debrief", {})
+                        if debrief and "evaluation" in debrief:
+                            st.session_state.evaluation_data = debrief["evaluation"]
+                        else:
+                            st.session_state.evaluation_data = debrief
                     st.rerun()
     
     with col2:
@@ -313,7 +322,11 @@ if st.session_state.scenario_active and not st.session_state.evaluation_data:
                         "content": response["narrative"]
                     })
                     if response.get("scenario_complete", False):
-                        st.session_state.evaluation_data = response.get("debrief")
+                        debrief = response.get("debrief", {})
+                        if debrief and "evaluation" in debrief:
+                            st.session_state.evaluation_data = debrief["evaluation"]
+                        else:
+                            st.session_state.evaluation_data = debrief
                     st.rerun()
     
     with col3:
@@ -405,6 +418,8 @@ if st.session_state.evaluation_data:
     if recommendations:
         for rec in recommendations:
             st.write(f"• {rec}")
+    elif eval_data.get("decisions_tracked", 0) == 0:
+        st.info("ℹ️ Not enough data collected to generate recommendations. Try interacting more with the scenario.")
     else:
         st.success("Excellent performance! Keep up the good work!")
     
@@ -419,4 +434,4 @@ if st.session_state.evaluation_data:
 # ============================================================================
 
 st.divider()
-st.caption("🛡️ CyberGuard Academy - Multi-Agent Cybersecurity Training Platform | Powered by Google ADK & Gemini")
+st.caption("🛡️ CyberGuard Academy - Multi-Agent Cybersecurity Training Platform | Powered by Groq")

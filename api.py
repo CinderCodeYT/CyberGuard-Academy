@@ -15,6 +15,7 @@ import uuid
 
 from loguru import logger
 
+# Force reload trigger 3
 from cyberguard.orchestrator import CyberGuardOrchestrator
 from main import get_orchestrator
 from cyberguard.models import (
@@ -60,6 +61,7 @@ class UserActionResponse(BaseModel):
     narrative: str
     scenario_complete: bool = False
     hints_available: bool = True
+    session_state: Optional[str] = None
     debrief: Optional[Dict[str, Any]] = None
 
 
@@ -91,6 +93,38 @@ async def lifespan(app: FastAPI):
     """Manage application lifespan (startup and shutdown)."""
     # Startup
     logger.info("🚀 Starting CyberGuard Academy API")
+    
+    # Configure logging
+    try:
+        import sys
+        from pathlib import Path
+        
+        # Create logs directory
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        
+        # Configure loguru
+        logger.remove()  # Remove default handler
+        logger.add(sys.stderr, level="INFO")  # Add console handler
+        logger.add(
+            log_dir / "api.log",
+            rotation="10 MB",
+            retention="1 week",
+            level="INFO",
+            encoding="utf-8"
+        )
+        logger.add(
+            log_dir / "api.err",
+            rotation="10 MB",
+            retention="1 week",
+            level="ERROR",
+            encoding="utf-8"
+        )
+        logger.success("✅ Logging configured")
+        
+    except Exception as e:
+        print(f"Failed to configure logging: {e}")
+    
     try:
         orchestrator = await get_orchestrator()
         logger.success("✅ API ready and all agents initialized")
@@ -216,6 +250,7 @@ async def process_user_action(request: UserActionRequest):
             narrative=response.get("narrative", ""),
             scenario_complete=response.get("scenario_complete", False),
             hints_available=response.get("hints_available", True),
+            session_state=response.get("session_state"),
             debrief=response.get("debrief")
         )
         
